@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html>
+    <head>
+		<title></title>
+    {% load static %}
+   </head>
+    <body>
+	    <div id="wrapper">
+	    	<div id="mainbox">
+	    		{% if games %}
+		  			{% for game in games %}
+		  				{% if game.players.count < 2 %}
+			  				<a href="join_game/{{game.id}}">Join game {{game.id}} {{game.players.count}}</a>
+			  			{% endif %}
+		  				<a href="/game_board/play/{{game.id}}">View game {{game.id}}</a>
+		  				<a href="delete_game/{{game.id}}">Delete game {{game.id}}</a><br/>
+		  			{% endfor %}
+		  		{% endif %}
+	  		</div>
+
+	  		<form action="/game_board/populate_board" method="post">
+				{% csrf_token %} 
+				<input type="submit" name="submit" value="New Game">
+	  		</form>
+	  	</div>
+	</body>
+</html>
