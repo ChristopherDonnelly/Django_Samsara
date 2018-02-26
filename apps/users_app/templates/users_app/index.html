@@ -1,0 +1,40 @@
+<!DOCTYPE html> 
+<html lang="en"> 
+	<head> 
+	    <meta charset="UTF-8"> 
+	    <title>Login</title>
+	     {% load static %}  
+	        <link rel="stylesheet" href="{% static 'users_app/css/style.css' %}" media="screen" title="no title"  charset="utf-8">
+	</head> 
+	<body> 
+	     <div id="wrapper"> 
+	         <h1>Login</h1> 
+	         <div id="content_layer"> 
+				<form action="/verify_login/" method="post">
+					{% csrf_token %} 
+					<div id="labels">
+						<label for="username"><span>Username:</span>
+							<input type="text" name="username" id="username" placeholder="Enter Username" value="{{ request.session.username }}"></label>
+						<label for="password"><span>Password:</span>
+							<input type="password" name="password" id="password" placeholder="Enter Password"></label>
+					</div>
+					<div id="errorLayer">
+						{% if messages %}
+							{% for message in messages %}
+								{% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
+									<p{% if message.tags %} class="{{ message.tags }}"{% endif %}>
+										{{ message }}
+									</p>
+								{% endif %}
+							{% endfor %}
+						{% endif %}
+					</div>
+					<span id="nav">
+						<input type='submit' value='Login'>
+					</span>
+					<a href="/register/">Register</a>
+				</form>
+	        </div>
+	     </div> 
+	</body> 
+</html> 

@@ -1,0 +1,176 @@
+* {
+    padding: 0px;
+    margin: 0px;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+#wrapper {
+    position: relative;
+    margin: 50px auto;
+    width: 970px;
+    text-align: center;
+}
+
+#content_layer {
+    width: 850px;
+    border: 2px inset darkgray;
+    margin: 25px auto;
+    padding: 25px;
+    box-shadow: 3px 3px 5px lightgrey;
+}
+
+#show_layer {
+    height: 450px;
+    overflow-y: auto;
+}
+
+a {
+    padding: 5px;
+}
+
+#content_layer p, #content_layer #nav a {
+    text-align: left;
+    padding: 10px;
+}
+
+#content_layer p {
+    font-size: 1.4em;
+}
+
+#content_layer #nav {
+    margin: 50px 0px 0px;
+}
+
+#content_layer input[type="submit"] + #nav {
+    margin: 20px 0px 0px;
+}
+
+#content_layer label {
+    display: block;
+    text-align: right;
+    padding: 10px;
+    font-size: 1.3em;
+}
+
+#content_layer input[type="text"], #content_layer input[type="email"], #content_layer input[type="password"] {
+    width: 300px;
+    font-size: 0.8em;
+    padding: 3px;
+}
+
+#wrapper>p {
+    width: 250px;
+}
+
+#labels {
+    vertical-align: top;
+    display: inline-block;
+    width: 70%;
+}
+
+#errorLayer {
+    position: relative;
+    vertical-align: top;
+    display: inline-block;
+    width: 25%;
+    padding-top: 1px;
+}
+
+#content_layer p.error {
+    color: red;
+    font-size: 0.9em;
+    position: absolute;
+    left: -10px;
+}
+p.error::before {
+    content: '*';
+    position: absolute;
+    margin-left: -400px;
+    margin-top: -5px;
+}
+p.login_username.error:before, p.username.error:before  {
+    margin-left: -440px;
+}
+p.password.error:before, p.login_password.error:before {
+    margin-left: -435px;
+}
+p.confirm_pw.error:before {
+    margin-left: -513px;
+}
+p.name.error, p.login_username.error {
+    top: 7px;
+}
+p.username.error, p.login_password.error {
+    top: 57px;
+}
+p.password.error {
+    top: 107px;
+}
+p.confirm_pw.error {
+    top: 157px;
+}
+
+table {
+    width: 100%;
+}
+
+table, table th {
+    border: 1px solid lightgray;
+    border-collapse: collapse;
+}
+
+table th, table td {
+    padding: 5px;
+}
+
+th {
+    background-color: darkslategray;
+    color: white;
+}
+
+tr:nth-child(even) {
+    background-color: #f2f2f2;
+}
+
+tr:hover {
+    cursor: pointer;
+    background-color: lightgray;
+}
+
+table td {
+    text-align: left;
+}
+td:nth-child(n+4) {
+    text-align: center;
+}
+
+input[type="submit"] {
+    width: 115px;
+    height: 35px;
+    border-radius: 10px;
+    border: 1px solid darkgray;
+    background-color: white;
+    box-shadow: 3px 3px 10px lightgrey;
+    font-weight: bold;
+    text-shadow: 1px 1px 2px grey;
+    cursor: pointer;
+    color: black;
+    margin: 50px 0px 0px;
+}
+
+input[type="submit"]:hover {
+    border: 1px solid darkgray;
+    background-color: lightskyblue;
+    color: white;
+    box-shadow: 3px 3px 10px lightgrey;
+    text-shadow: 1px 1px 2px grey;
+}
+
+.red {
+    color: red;
+}
+
+#content_layer #nav {
+    margin: 0px 0px 25px;
+    display: block;
+}
