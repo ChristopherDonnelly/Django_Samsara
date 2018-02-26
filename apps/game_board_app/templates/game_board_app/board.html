@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>Samsara - Game Board</title>
+
+    <!-- Bootstrap CSS -->
+    {% load static %}  
+        <link rel="stylesheet" href="{% static 'game_board_app/css/normalize.css' %}" media="screen" title="no title"  charset="utf-8">
+        <link rel="stylesheet" href="{% static 'game_board_app/css/bootstrap.min.css' %}" media="screen" title="no title"  charset="utf-8">
+        <link rel="stylesheet" href="{% static 'game_board_app/css/style.css' %}" media="screen" title="no title"  charset="utf-8">
+
+        <script src="{% static 'game_board_app/js/jquery-3.3.1.min.js' %}"></script>
+        <script src="{% static 'game_board_app/js/utils.js' %}"></script>
+        <script src="{% static 'game_board_app/js/tether.js' %}"></script>
+        <script src="{% static 'game_board_app/js/bootstrap.min.js' %}"></script>
+
+    <script>
+        $(document).ready(function(){
+
+            $(document).on('click', '.board-space button', function(){
+                console.log('Column Number: '+$(this).attr('data-column'))
+            });
+        });
+    </script>
+</head>
+<body>
+    <div id="wrapper">
+        <div id="left-column" class="container-fluid">
+            <div id="menu" class="row">
+                <button type="button" class="btn btn-info navbar-btn">
+                    Menu
+                </button>
+                <!-- <div>
+                    <a href="/main_menu/">Main Menu</a>
+                    <a href="/concede/">Concede</a>
+                    <a href="/quit/">Quit</a>
+                </div> -->
+            </div>
+
+            <div class="align-self-end">
+                <div class="row player-hp">
+                    <p>Health</p>
+                    <p><strong>10</strong></p>
+                </div>
+                <div class="row player-box">
+                    <div>
+                        <img src="{% static 'game_board_app/images/star-empty.png' %}" alt='Profile Picture' >
+                    </div>
+                    <p>Player 1</p>
+                </div>
+            </div>
+        </div>
+        <div id="middle-column" class="container-fluid">
+            <div class="row">
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+            </div>
+            <div class="row">
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+            </div>
+            <div class="row">
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+            </div>
+            <div class="row">
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+            </div>
+            <div class="row">
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+            </div>
+            <div class="row">
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+            </div>
+            <div class="row">
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+                <div class="col-2 board-space"></div>
+            </div>
+            <div class="row">
+                <div class="col-2 board-space">
+                    <button data-column="1"></button>
+                </div>
+                <div class="col-2 board-space">
+                    <button data-column="2"></button>
+                </div>
+                <div class="col-2 board-space">
+                    <button data-column="3"></button>
+                </div>
+                <div class="col-2 board-space">
+                    <button data-column="4"></button>
+                </div>
+                <div class="col-2 board-space">
+                    <button data-column="5"></button>
+                </div>
+                <div class="col-2 board-space">
+                    <button data-column="6"></button>
+                </div>
+            </div>
+        </div>
+        <div id="right-column" class="container-fluid">
+            <div class="row player-box">
+                <div>
+                    <img src="{% static 'game_board_app/images/star.png' %}" alt='Profile Picture' >
+                </div>
+                <p>Player 2</p>
+            </div>
+            <div class="row player-hp">
+                <p>Health</p>
+                <p><strong>10</strong></p>
+            </div>
+        </div>
+        <div id="footer">
+
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,78 @@
+#wrapper {
+    width: 90%;
+    margin: 20px auto;
+    flex-wrap: nowrap;
+}
+.container-fluid {
+    display: inline-block;
+    vertical-align: top;
+}
+#left-column, #right-column {
+    width: 19%;
+    height: 80vh;
+}
+#left-column button {
+    height: 40px;
+    margin: 20px auto;
+}
+#middle-column {
+    width: 60%;
+}
+#menu {
+    margin: 0px auto;
+    height: 50vh;              
+}
+button {
+    cursor: pointer;
+}
+.player-box {
+    border: 1px solid black;
+    height: 20vh;
+    text-align: center;
+}
+.player-box div {
+    width: 100%;
+    padding-top: 20px;
+}
+.player-box p {
+    width: 100%;
+}
+.player-box img {
+    height: 10vh;
+}
+.player-hp {
+    border: 1px solid black;
+    height: 10vh;
+    text-align: center;
+}
+.player-hp p {
+    width: 100%;
+    padding-top: 10px;
+    padding-bottom: 0px;
+    margin: 0px;
+}
+.player-hp p~p {
+    padding-top: 0px;
+    padding-bottom: 0px;
+    margin: 0px;
+}
+.board-space {
+    border: 1px solid black;
+    height: 10vh;
+    margin: 0px;
+    padding: 0px;
+}
+.board-space button {
+    width: 102%;
+    height: 10vh;
+    margin-left: -1px;
+    margin-top: -1px;
+    background-color: transparent;
+    border: none;
+}
+#footer {
+    margin-top: 5px;
+    border: 1px solid black;
+    width: 79.5%;
+    height: 10vh;
+}
