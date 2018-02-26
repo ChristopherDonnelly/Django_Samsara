@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+    <head>
+		<title></title>
+    {% load static %}
+   </head>
+    <body>
+	    <div id="wrapper">
+	    	<div id="mainbox">
+	    		{% for row in rows %}
+	    			{% for square in row.squares.all %}
+	    				{% if square.entity %}
+	    					{{square.entity.kind}} {{square.entity.element.name}} {{square.entity.element.color}}
+	    				{% else %}
+	    					Empty
+	    				{% endif %}
+	    				 <br/>
+	    			{% endfor %}
+	    		{% endfor %}
+	  		</div>
+	  		<a href="/lobby">Lobby</a>
+	  	</div>
+	</body>
+</html>

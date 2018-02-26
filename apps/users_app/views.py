@@ -6,7 +6,7 @@ from django.contrib import messages
 from .models import User
 
 class Route(object):
-    REDIRECT_ROUTE = '/travels/'
+    REDIRECT_ROUTE = '/game_board/'
 
 def login(request):
     if 'user_session' in request.session and request.session['user_session']:
