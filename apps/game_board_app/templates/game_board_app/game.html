@@ -7,6 +7,15 @@
     <body>
 	    <div id="wrapper">
 	    	<div id="mainbox">
+				{% if messages %}
+					{% for message in messages %}
+						{% if message.level == DEFAULT_MESSAGE_LEVELS.ERROR %}
+							<p{% if message.tags %} class="{{ message.tags }}"{% endif %}>
+								{{ message }}
+							</p>
+						{% endif %}
+					{% endfor %}
+				{% endif %}
 	    		{% for row in rows %}
 	    			{% for square in row.squares.all %}
 	    				{% if square.entity %}
