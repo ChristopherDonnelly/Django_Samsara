@@ -16,4 +16,5 @@ def delete_board(request,game_id):
 
 def join_game(request,game_id):
 	Game.objects.join_game(game_id,request.session['user_session'])
-	return redirect('/game_board/play/'+game_id)
+	request.session['player_number'] = 2
+	return redirect('/game_board/draw_board/'+game_id)
