@@ -80,14 +80,15 @@ class GameManager(models.Manager):
 
 class Game(models.Model):
 	level = models.PositiveSmallIntegerField()
+	turn = models.PositiveSmallIntegerField(default=1) # Keeps track of whose turn it is
 	created_at = models.DateTimeField(auto_now_add = True)
 	updated_at = models.DateTimeField(auto_now = True)
 
 	objects = GameManager()
 
 class Player(models.Model):
-	game = models.ForeignKey(Game, related_name="players")
-	user = models.ForeignKey(User)
+	game = models.ForeignKey(Game, related_name="players",on_delete=models.PROTECT)
+	user = models.ForeignKey(User,on_delete=models.PROTECT)
 	player_number = models.PositiveSmallIntegerField()
 	score = models.IntegerField()
 	created_at = models.DateTimeField(auto_now_add = True)
@@ -100,25 +101,59 @@ class Element(models.Model):
 	created_at = models.DateTimeField(auto_now_add = True)
 	updated_at = models.DateTimeField(auto_now = True)
 
+class EntityManager(models.Manager):
+	def relative_square(player_number,row,column):
+		row_conversion = [1,2,3,4,5,6,7,8]
+		column_conversion = [1,2,3,4,5,6]
+		if player_number == 1:
+			return {"row": row, "column": column}
+		else:
+			return {"row":row_conversion[row*-1], "column": column_conversion[column*-1]}
+
+	def place_building(self,user_id,game_id,row,square,element):
+		errors = {}
+		entity = None
+		players = Player.objects.filter(user=User.objects.filter(id=user_id),game=Game.objects.filter(id=game_id))
+		if players.count() == 1:
+			player = players[0]
+		else:
+			errors['user'] = "No user or too many users found"
+
+		squares = Square.objects.filter(row=Row.objects.filter(game_id=game_id,position=row),position=square)
+		print ("Row {}, game {}, square {}".format(row,game_id,square))
+		if squares.count() == 1:
+			square = squares[0]
+		else:
+			errors['square'] = "No square or too many squares found"
+
+		if not errors:
+			entity = Entity.objects.create(element=Element.objects.get(name=element),level=0,kind='Building',owner=User.objects.get(id=user_id))
+			square.entity = entity
+			square.save()
+
+		return {"errors":errors, "entity": entity}
+
 # insert into game_board_app_entity (element_id,level,owner_id,created_at,updated_at,kind) values (1,1,1,'2/24/2018','2/24/2018','Building')
 class Entity(models.Model):
 	kind = models.CharField(max_length=50,default="Building")
-	element = models.ForeignKey(Element, related_name="entity")
+	element = models.ForeignKey(Element, related_name="entity",on_delete=models.PROTECT)
 	level = models.PositiveSmallIntegerField()	
-	owner = models.ForeignKey(User, related_name="entity")
+	owner = models.ForeignKey(User, related_name="entity",on_delete=models.PROTECT)
 	created_at = models.DateTimeField(auto_now_add = True)
 	updated_at = models.DateTimeField(auto_now = True)
 
+	objects = EntityManager()
+
 class Row(models.Model):
 	position = models.PositiveSmallIntegerField() # Positions 1-5
-	game = models.ForeignKey(Game, related_name="rows")
+	game = models.ForeignKey(Game, related_name="rows",on_delete=models.PROTECT)
 	created_at = models.DateTimeField(auto_now_add = True)
 	updated_at = models.DateTimeField(auto_now = True)
 
 # insert into game_board_app_square (status,building_id,unit_id,position,row_id,created_at,updated_at) values ('Building',1,NULL,2,1,'2/24/2018','2/24/2018')
 class Square(models.Model):
-	entity = models.ForeignKey(Entity, related_name="square",null=True)
+	entity = models.ForeignKey(Entity, related_name="square",null=True,on_delete=models.PROTECT)
 	position = models.PositiveSmallIntegerField() # Positions 1-10
-	row = models.ForeignKey(Row, related_name="squares")
+	row = models.ForeignKey(Row, related_name="squares",on_delete=models.PROTECT)
 	created_at = models.DateTimeField(auto_now_add = True)
 	updated_at = models.DateTimeField(auto_now = True)
