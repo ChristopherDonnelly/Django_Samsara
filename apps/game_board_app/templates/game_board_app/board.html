@@ -19,8 +19,35 @@
     <script>
         $(document).ready(function(){
 
+            function csrfSafeMethod(method) {
+                // these HTTP methods do not require CSRF protection
+                return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+            }
+
             $(document).on('click', '.board-space button', function(){
                 console.log('Column Number: '+$(this).attr('data-column'))
+
+                var params = { column: $(this).attr('data-column'), row: 1, element: "fire" }
+                var button = $(this)
+                $.ajaxSetup({
+                    beforeSend: function(xhr, settings) {
+                        if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                            xhr.setRequestHeader("X-CSRFToken", '{{ csrf_token }}');
+                        }
+                    }
+                });
+                $.ajax( { type: "POST",
+                    url: '/game_board/place_building',
+                    dataType: "json",
+                    data: JSON.stringify(params),
+                    contentType: "application/json; charset=utf-8",
+                    traditional: true,
+                    success: function(result) {
+                        console.log(result)
+                        console.log("Success!")
+                        button.parent().html("<img src={% static 'game_board_app/images/red_building.png' %} alt='fire'>")
+                    }
+                });
             });
         });
     </script>
@@ -53,6 +80,7 @@
             </div>
         </div>
         <div id="middle-column" class="container-fluid">
+            {% csrf_token %}
             <div class="row">
                 <div class="col-2 board-space"></div>
                 <div class="col-2 board-space"></div>
