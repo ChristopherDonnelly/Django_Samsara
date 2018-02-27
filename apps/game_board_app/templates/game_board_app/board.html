@@ -25,7 +25,7 @@
             }
 
             $(document).on('click', '.board-space button', function(){
-                console.log('Column Number: '+$(this).attr('data-column'))
+                console.log('Path Number: '+$(this).attr('data-column'))
 
                 var params = { column: $(this).attr('data-column'), row: 1, element: "fire" }
                 var button = $(this)
