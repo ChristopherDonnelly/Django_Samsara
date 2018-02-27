@@ -6,7 +6,7 @@ import random
 
 # Create your models here.
 class GameManager(models.Manager):
-	def new_game(self,user_id,level=0,rows=6,columns=8):
+	def new_game(self,user_id,level=0,columns=6,rows=8):
 		errors = {}
 		user = None
 		game = None
@@ -19,16 +19,13 @@ class GameManager(models.Manager):
 
 		if not errors:
 			game = Game.objects.create(level=level)
-			player = Player.objects.create(game=game,user=User.objects.get(id=user_id),player_number=1,score=0)
+			player = Player.objects.create(game=game,user=User.objects.get(id=user_id),player_number=1,health=10)
 
 			# Build the board
 			for row_num in range(1,rows+1):
 				row = Row.objects.create(position=row_num,game=game)
 				for col_num in range(1,columns+1):
 					square = Square.objects.create(position=col_num,row=row)
-
-			# Choose buildings for player 1
-			# Game.objects.choose_buildings(game.id,user_id,1)
 
 		return {"errors": errors, "game":game}
 
@@ -38,27 +35,6 @@ class GameManager(models.Manager):
 		Row.objects.filter(game=Game.objects.get(id=game_id)).delete()
 		Player.objects.filter(game_id=game_id).delete()
 		Game.objects.get(id=game_id).delete()
-
-	def choose_buildings(self,game_id,user_id,player_number):
-		rows = Row.objects.filter(game_id=game_id)
-		cols = rows[0].squares.count()
-		if player_number == 1:
-			row = 1
-		else:
-			row = rows.count()
-
-		building_count = 2
-		for col_num in range(1,cols+1):
-			entity = None
-			element = random.randint(0,5) # 0 will be no building
-			if element != 0 and building_count > 0:
-				building_count -= 1
-				entity = Entity.objects.create(kind='Building',element=Element.objects.get(id=element),level=0,owner=User.objects.get(id=user_id))
-				square = Square.objects.get(position=col_num,row=Row.objects.get(game=Game.objects.get(id=game_id),position=row))
-				square.entity = entity
-				square.save()
-
-		return True
 
 	def join_game(self,game_id,user_id):
 		errors = {}
@@ -76,8 +52,6 @@ class GameManager(models.Manager):
 
 		if not errors:
 			player = Player.objects.create(game=game,user=User.objects.get(id=user_id),player_number=2,score=0)
-			Game.objects.choose_buildings(game.id,user_id,2)
-
 
 class Game(models.Model):
 	level = models.PositiveSmallIntegerField()
@@ -91,7 +65,7 @@ class Player(models.Model):
 	game = models.ForeignKey(Game, related_name="players",on_delete=models.PROTECT)
 	user = models.ForeignKey(User,on_delete=models.PROTECT)
 	player_number = models.PositiveSmallIntegerField()
-	score = models.IntegerField()
+	health = models.IntegerField()
 	created_at = models.DateTimeField(auto_now_add = True)
 	updated_at = models.DateTimeField(auto_now = True)
 
@@ -103,15 +77,8 @@ class Element(models.Model):
 	updated_at = models.DateTimeField(auto_now = True)
 
 class EntityManager(models.Manager):
-	def relative_square(player_number,row,column):
-		row_conversion = [1,2,3,4,5,6,7,8]
-		column_conversion = [1,2,3,4,5,6]
-		if player_number == 1:
-			return {"row": row, "column": column}
-		else:
-			return {"row":row_conversion[row*-1], "column": column_conversion[column*-1]}
 
-	def place_building(self,user_id,game_id,row,square,element):
+	def place_building(self,user_id,game_id,row,column,element):
 		errors = {}
 		entity = None
 		players = Player.objects.filter(user_id=user_id,game_id=game_id)
@@ -120,8 +87,8 @@ class EntityManager(models.Manager):
 		else:
 			errors['user'] = "No user or too many users found"
 
-		squares = Square.objects.filter(row__in=Row.objects.filter(game_id=game_id,position=row),position=square)
-		print ("Row {}, game {}, square {}, squares {}".format(row,game_id,square,squares.count()))
+		squares = Square.objects.filter(row__in=Row.objects.filter(game_id=game_id,position=row),position=column)
+		print ("Row {}, game {}, square {}, squares {}".format(row,game_id,column,squares.count()))
 		if squares.count() == 1:
 			square = squares[0]
 		else:
