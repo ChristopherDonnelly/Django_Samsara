@@ -28,14 +28,15 @@ class GameManager(models.Manager):
 					square = Square.objects.create(position=col_num,row=row)
 
 			# Choose buildings for player 1
-			Game.objects.choose_buildings(game.id,user_id,1)
+			# Game.objects.choose_buildings(game.id,user_id,1)
 
 		return {"errors": errors, "game":game}
 
 	def delete_game(self,game_id):
-		Entity.objects.filter(square=Square.objects.filter(row=Row.objects.filter(game=Game.objects.get(id=game_id)))).delete()
-		Square.objects.filter(row=Row.objects.filter(game=Game.objects.get(id=game_id))).delete()
+		Entity.objects.filter(square__in=Square.objects.filter(row__in=Row.objects.filter(game_id=game_id))).delete()
+		Square.objects.filter(row__in=Row.objects.filter(game=Game.objects.get(id=game_id))).delete()
 		Row.objects.filter(game=Game.objects.get(id=game_id)).delete()
+		Player.objects.filter(game_id=game_id).delete()
 		Game.objects.get(id=game_id).delete()
 
 	def choose_buildings(self,game_id,user_id,player_number):
@@ -113,14 +114,14 @@ class EntityManager(models.Manager):
 	def place_building(self,user_id,game_id,row,square,element):
 		errors = {}
 		entity = None
-		players = Player.objects.filter(user=User.objects.filter(id=user_id),game=Game.objects.filter(id=game_id))
+		players = Player.objects.filter(user_id=user_id,game_id=game_id)
 		if players.count() == 1:
 			player = players[0]
 		else:
 			errors['user'] = "No user or too many users found"
 
-		squares = Square.objects.filter(row=Row.objects.filter(game_id=game_id,position=row),position=square)
-		print ("Row {}, game {}, square {}".format(row,game_id,square))
+		squares = Square.objects.filter(row__in=Row.objects.filter(game_id=game_id,position=row),position=square)
+		print ("Row {}, game {}, square {}, squares {}".format(row,game_id,square,squares.count()))
 		if squares.count() == 1:
 			square = squares[0]
 		else:
@@ -152,7 +153,7 @@ class Row(models.Model):
 
 # insert into game_board_app_square (status,building_id,unit_id,position,row_id,created_at,updated_at) values ('Building',1,NULL,2,1,'2/24/2018','2/24/2018')
 class Square(models.Model):
-	entity = models.ForeignKey(Entity, related_name="square",null=True,on_delete=models.PROTECT)
+	entity = models.ForeignKey(Entity, related_name="square",null=True,on_delete=models.SET_NULL)
 	position = models.PositiveSmallIntegerField() # Positions 1-10
 	row = models.ForeignKey(Row, related_name="squares",on_delete=models.PROTECT)
 	created_at = models.DateTimeField(auto_now_add = True)
