@@ -6,7 +6,7 @@ from django.contrib import messages
 from .models import User
 
 class Route(object):
-    REDIRECT_ROUTE = '/game_board/'
+    REDIRECT_ROUTE = '/lobby/'
 
 def login(request):
     if 'user_session' in request.session and request.session['user_session']:
@@ -31,7 +31,7 @@ def verify_login(request):
     else:
         request.session['username'] = request.POST['username']
         
-        for tag, error in response['errors'].iteritems():
+        for tag, error in response['errors'].items():
             messages.error(request, error, extra_tags=tag)
 
         goto = '/'
@@ -50,7 +50,7 @@ def create(request):
         request.session['name'] = request.POST['name']
         request.session['username'] = request.POST['username']
         
-        for tag, error in response['errors'].iteritems():
+        for tag, error in response['errors'].items():
             messages.error(request, error, extra_tags=tag)
 
         goto = '/register/'
