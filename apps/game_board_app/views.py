@@ -6,6 +6,17 @@ from .models import Game, Row, Square, Element, Entity, User
 import json
 from django.http import JsonResponse
 
+def get_squares(request,game_id):
+	rows=Row.objects.filter(game_id=game_id);
+	context = {
+		"game": Game.objects.get(id=game_id),
+		"rows": rows,
+		"squares": Square.objects.filter(row_id=rows[0].id),
+		"user": User.objects.filter(id=request.session['user_session'])[0]
+	}
+
+	return render(request, "game_board_app/partials/game_squares.html")
+
 def draw_board(request,game_id):
 	context = {
 		"game": Game.objects.get(id=game_id),
