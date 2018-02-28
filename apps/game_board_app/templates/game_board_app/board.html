@@ -20,13 +20,18 @@
 
     <script>
         $(document).ready(function(){
-
-            $('.makeMeDraggable').draggable({
-                stack: $('.makeMeDraggable'),
-                containment: $('body'),
-                helper: "clone"
-            });
             
+            waitTurn = null;
+
+            function makeDraggables(){
+                console.log('make me draggable')
+                $('.makeMeDraggable').draggable({
+                    stack: $('.makeMeDraggable'),
+                    containment: $('body'),
+                    helper: "clone"
+                });
+            }
+
             function findDroppables(){
                 $(".makeMeDroppable").droppable({
                     drop: function (event, ui) {
@@ -72,73 +77,65 @@
 
             function onTimerTick() {
                 $.get('/game_board/get_squares', function(res){
+                    console.log(res)
                     $('#board-area').html(res);
                     findDroppables();
                 });
             }
+            
             $(document).on('click', 'button.navbar-btn', function(){
+                clearInterval(waitTurn);
                 window.location = '/lobby';
             });
 
-            // $(document).on('click', '.board-space button', function(){
-            //     var $btn = $(this);
-
-            //     console.log('Path Number: '+$btn.attr('data-column'))
-
-            //     var params = { column: $btn.attr('data-column'), row: $btn.attr('data-row'), element: "fire" }
+            $.get('/game_board/get_players_info', function(res){
+                $('#player1_name').html(res.current_player);
+                $('#player1_health').html(res.current_player.health);
                 
-            //     $.ajaxSetup({
-            //         beforeSend: function(xhr, settings) {
-            //             if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-            //                 xhr.setRequestHeader("X-CSRFToken", '{{ csrf_token }}');
-            //             }
-            //         }
-            //     });
-            //     $.ajax( { type: "POST",
-            //         url: '/game_board/place_building',
-            //         dataType: "json",
-            //         data: JSON.stringify(params),
-            //         contentType: "application/json; charset=utf-8",
-            //         traditional: true,
-            //         success: function(result) {
-            //             console.log(result)
-            //             console.log("Success!")
-            //             $btn.parent().html("<img src={% static 'game_board_app/images/fire_building.png' %} alt='fire building'>")
-            //         }
-            //     });
-            // });
+                $('#player2_name').html(res.opponent);
+                $('#player2_health').html(res.opponent.health);
+                
+                if(res.current_player_turn){
+                    clearInterval(waitTurn);
+                    makeDraggables();
+                }else{
+                    waitTurn = setInterval(onTimerTick, 33);
+                }
+
+                updatePlayersTurn(res.turn);
+
+            }, "json");
+
+            $(document).on('mouseenter', '.entity', function(){
+                displayInfo($(this));
+            }).on('mouseleave', '.entity', function(){
+                $('#info-box').html('');
+            });
+
+            function displayInfo($entity){
+                var entity='<p><strong>'+$entity.attr('data-type')+'</strong></p>';
+                var type='<p><strong>Type:</strong> '+$entity.attr('data-name')+'</p>';
+                var health='<p><strong>Health:</strong> '+$entity.attr('data-health')+'</p>';
+                var info=entity+type+health;
+                $('#info-box').html(info);
+            }
+
+            function updatePlayersTurn(playerName){
+                $('#header h2').text(playerName+"'s Turn");
+            }
+
         });
     </script>
-    <style>
-        #board-area {
-            height: 80vh;
-        }
-        .makeMeDraggable { 
-            cursor: pointer;
-        }
-        #fire {
-            
-        }
-        #water {
-            background: blue;
-        }
-        #wood {
-            background: green;
-        }
-        #metal {
-            background: purple;
-        }
-        #earth {
-            background: yellow;
-        }
-        </style>
 </head>
 <body>
     <div id="wrapper">
+        <div id="header" class="row">
+            <h2></h2>
+        </div>
         <div id="left-column" class="container-fluid">
             <div id="menu" class="row">
                 <button type="button" class="btn btn-info navbar-btn">
-                    Menu
+                    Lobby
                 </button>
                 <!-- <div>
                     <a href="/main_menu/">Main Menu</a>
@@ -150,13 +147,19 @@
             <div class="align-self-end">
                 <div class="row player-hp">
                     <p>Health</p>
-                    <p><strong>10</strong></p>
+                    <p><strong id="player1_health">10</strong></p>
                 </div>
                 <div class="row player-box">
                     <div>
                         <img src="{% static 'game_board_app/images/star-empty.png' %}" alt='Profile Picture' >
                     </div>
-                    <p>Player 1</p>
+                    <p id="player1_name">Player 1</p>
+                </div>
+            </div>
+
+            <div id="info-layer" class="row">
+                <div id="info-box">
+                    
                 </div>
             </div>
         </div>
@@ -166,19 +169,19 @@
             </div>
             <div id="footer">
                 <div id="fire" class="col-2 board-space makeMeDraggable container-fluid">
-                    <img src="{% static 'game_board_app/images/fire_building.png' %}" alt='fire building' >
+                    <img src="{% static 'game_board_app/images/fire_building.png' %}" data-type="Building" data-name="Fire" data-health="Blueprint" alt='fire building'  class="entity">
                 </div>
                 <div id="water" class="col-2 board-space makeMeDraggable container-fluid">
-                    
+                    <img src="{% static 'game_board_app/images/water_building.png' %}" data-type="Building" data-name="Water" data-health="Blueprint" alt='water building' class="entity">
                 </div>
                 <div id="wood" class="col-2 board-space makeMeDraggable container-fluid">
-                    
+                    <img src="{% static 'game_board_app/images/wood_building.png' %}" data-type="Building" data-name="Wood" data-health="Blueprint" alt='wood building'  class="entity">
                 </div>
                 <div id="metal" class="col-2 board-space makeMeDraggable container-fluid">
-                    
+                    <img src="{% static 'game_board_app/images/metal_building.png' %}" data-type="Building" data-name="Metal" data-health="Blueprint" alt='metal building' class="entity">
                 </div>
                 <div id="earth" class="col-2 board-space makeMeDraggable container-fluid">
-                    
+                    <img src="{% static 'game_board_app/images/earth_building.png' %}" data-type="Building" data-name="Earth" data-health="Blueprint" alt='earth building' class="entity">
                 </div>
             </div>
         </div>
@@ -187,11 +190,11 @@
                 <div>
                     <img src="{% static 'game_board_app/images/star.png' %}" alt='Profile Picture' >
                 </div>
-                <p>Player 2</p>
+                <p id="player2_name">Player 2</p>
             </div>
             <div class="row player-hp">
                 <p>Health</p>
-                <p><strong>10</strong></p>
+                <p><strong id="player2_health">10</strong></p>
             </div>
         </div>
     </div>

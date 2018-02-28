@@ -6,6 +6,34 @@ from .models import Game, Row, Square, Element, Entity, User, Player
 import json
 from django.http import JsonResponse
 
+def get_players_info(request):
+
+	response = { }
+
+	players = Player.objects.filter(game_id=request.session['game_id'])
+
+	for player in players:
+		user = User.objects.get(id=player.user_id)
+		if user.id == request.session['user_session']:
+			response['current_player'] = user.username
+			response['current_player_health'] = player.health
+			if player.game.turn == player.player_number:
+				response['current_player_turn'] = True
+			else:
+				response['current_player_turn'] = False
+		else:
+			response['opponent'] = user.username
+			response['opponent_health'] = player.health
+			if player.game.turn == player.player_number:
+				response['opponent_turn'] = True
+			else:
+				response['opponent_turn'] = False
+		
+		if player.game.turn == player.player_number:
+			response['turn'] = user.username
+
+	return JsonResponse(response)
+
 def get_squares(request):
 	game_id = request.session['game_id']
 	reverse_order = False
@@ -117,6 +145,8 @@ def place_building(request):
 		for tag, error in building['errors'].items():
 			messages.error(request, error, extra_tags=tag)
 	
+	print(building['errors'])
+
 	return JsonResponse({"success":True})
 
 def attack(request,unit_id,target_id):
