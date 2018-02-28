@@ -51,7 +51,7 @@ class GameManager(models.Manager):
 			errors['user'] = "No user or too many users found"
 
 		if not errors:
-			player = Player.objects.create(game=game,user=User.objects.get(id=user_id),player_number=2,score=0)
+			player = Player.objects.create(game=game,user=User.objects.get(id=user_id),player_number=2,health=10)
 
 class Game(models.Model):
 	level = models.PositiveSmallIntegerField()

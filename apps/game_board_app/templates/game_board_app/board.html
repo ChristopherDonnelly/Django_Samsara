@@ -24,6 +24,17 @@
                 return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
             }
 
+            // setInterval(onTimerTick, 33); // 33 milliseconds = ~ 30 frames per sec
+            
+            onTimerTick()
+
+            function onTimerTick() {
+                $.get('/game_board/get_squares', function(res){
+                    console.log(res)
+                    $('#middle-column').html(res);
+                });
+            }
+
             $(document).on('click', '.board-space button', function(){
                 console.log('Path Number: '+$(this).attr('data-column'))
 

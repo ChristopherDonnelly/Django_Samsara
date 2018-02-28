@@ -1,59 +1,10 @@
+
 {% for row in rows %}
-    {% csrf_token %}
     <div class="row">
-    {% for square in squares %}
-        
-            <div class="col-2 board-space">{{ square }}</div>
-        
-    {% endfor %}
-    </div>
-{% endfor %}
-    <!-- <div class="row">
-        <div class="col-2 board-space">{{ square }}</div>
-        <div class="col-2 board-space">{{ square }}</div>
-        <div class="col-2 board-space">{{ square }}</div>
-        <div class="col-2 board-space">{{ square }}</div>
-        <div class="col-2 board-space">{{ square }}</div>
-        <div class="col-2 board-space">{{ square }}</div>
-    </div>
-    <div class="row">
-        <div class="col-2 board-space">
-            <button data-column="1"></button>
-        </div>
-        <div class="col-2 board-space">
-            <button data-column="2"></button>
-        </div>
-        <div class="col-2 board-space">
-            <button data-column="3"></button>
-        </div>
-        <div class="col-2 board-space">
-            <button data-column="4"></button>
-        </div>
-        <div class="col-2 board-space">
-            <button data-column="5"></button>
-        </div>
-        <div class="col-2 board-space">
-            <button data-column="6"></button>
-        </div>
-    </div> -->
-
-
-    <!-- <div class="item {% if forloop.counter == notes|length %}active{% endif %}">
-        <div class="note">
-            <div class="title_layer">
-                <form post="/edit_title/{{ note.id }}/" method="post" class="d-none">
-                    {% csrf_token %}
-                    <input name="title" value="{{ note.title }}">
-                </form>
-                <h3>{{ note.title }}</h3>                
+        {% for square in row %}
+            <div class="col-2 board-space">
+                {{ square }}
             </div>
-            <div class="description_layer">
-                <form post="/edit_description/{{ note.id }}/" method="post" class="d-none">
-                    {% csrf_token %}
-                    <textarea name="description">{{ note.description }}</textarea>
-                </form>
-                <p>{{ note.description }}</p>
-            </div>
-        </div>
-    </div> -->
+        {% endfor %}
+    </div>
 {% endfor %}
