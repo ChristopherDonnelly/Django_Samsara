@@ -106,7 +106,7 @@ class EntityManager(models.Manager):
 			errors['user'] = "No user or too many users found"
 
 		squares = Square.objects.filter(row__in=Row.objects.filter(game_id=game_id,position=row),position=column)
-		print ("Row {}, game {}, square {}, squares {}".format(row,game_id,column,squares.count()))
+		print ("Row {}, game {}, column {}, squares {}".format(row,game_id,column,squares.count()))
 		if squares.count() == 1:
 			square = squares[0]
 		else:

@@ -9,15 +9,57 @@
     {% load static %}  
         <link rel="stylesheet" href="{% static 'game_board_app/css/normalize.css' %}" media="screen" title="no title"  charset="utf-8">
         <link rel="stylesheet" href="{% static 'game_board_app/css/bootstrap.min.css' %}" media="screen" title="no title"  charset="utf-8">
+        <link rel="stylesheet" href="{% static 'game_board_app/css/jquery-ui.min.css' %}" media="screen" title="no title"  charset="utf-8">
         <link rel="stylesheet" href="{% static 'game_board_app/css/style.css' %}" media="screen" title="no title"  charset="utf-8">
 
         <script src="{% static 'game_board_app/js/jquery-3.3.1.min.js' %}"></script>
+        <script src="{% static 'game_board_app/js/jquery-ui.min.js' %}"></script>
         <script src="{% static 'game_board_app/js/utils.js' %}"></script>
         <script src="{% static 'game_board_app/js/tether.min.js' %}"></script>
         <script src="{% static 'game_board_app/js/bootstrap.min.js' %}"></script>
 
     <script>
         $(document).ready(function(){
+
+            $('.makeMeDraggable').draggable({
+                stack: $('.makeMeDraggable'),
+                containment: $('body'),
+                helper: "clone"
+            });
+            
+            function findDroppables(){
+                $(".makeMeDroppable").droppable({
+                    drop: function (event, ui) {
+                        var $div=$(this);
+                        var draggable = ui.draggable;
+                        draggable = draggable.clone();
+                        draggable.removeClass('col-2 makeMeDraggable').appendTo(this);
+
+                        var params = { column: $div.attr('data-column'), row: $div.attr('data-row'), element: draggable.attr('id') }
+                        
+                        $.ajaxSetup({
+                            beforeSend: function(xhr, settings) {
+                                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                                    xhr.setRequestHeader("X-CSRFToken", '{{ csrf_token }}');
+                                }
+                            }
+                        });
+                        
+                        $.ajax( { type: "POST",
+                            url: '/game_board/place_building',
+                            dataType: "json",
+                            data: JSON.stringify(params),
+                            contentType: "application/json; charset=utf-8",
+                            traditional: true,
+                            success: function(result) {
+                                console.log(result)
+                                console.log("Success!")
+                                //$btn.parent().html("<img src={% static 'game_board_app/images/fire_building.png' %} alt='fire building'>")
+                            }
+                        });
+                    }
+                });
+            }
 
             function csrfSafeMethod(method) {
                 // these HTTP methods do not require CSRF protection
@@ -30,38 +72,66 @@
 
             function onTimerTick() {
                 $.get('/game_board/get_squares', function(res){
-                    console.log(res)
-                    $('#middle-column').html(res);
+                    $('#board-area').html(res);
+                    findDroppables();
                 });
             }
-
-            $(document).on('click', '.board-space button', function(){
-                console.log('Path Number: '+$(this).attr('data-column'))
-
-                var params = { column: $(this).attr('data-column'), row: 1, element: "fire" }
-                var button = $(this)
-                $.ajaxSetup({
-                    beforeSend: function(xhr, settings) {
-                        if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                            xhr.setRequestHeader("X-CSRFToken", '{{ csrf_token }}');
-                        }
-                    }
-                });
-                $.ajax( { type: "POST",
-                    url: '/game_board/place_building',
-                    dataType: "json",
-                    data: JSON.stringify(params),
-                    contentType: "application/json; charset=utf-8",
-                    traditional: true,
-                    success: function(result) {
-                        console.log(result)
-                        console.log("Success!")
-                        button.parent().html("<img src={% static 'game_board_app/images/red_building.png' %} alt='fire'>")
-                    }
-                });
+            $(document).on('click', 'button.navbar-btn', function(){
+                window.location = '/lobby';
             });
+
+            // $(document).on('click', '.board-space button', function(){
+            //     var $btn = $(this);
+
+            //     console.log('Path Number: '+$btn.attr('data-column'))
+
+            //     var params = { column: $btn.attr('data-column'), row: $btn.attr('data-row'), element: "fire" }
+                
+            //     $.ajaxSetup({
+            //         beforeSend: function(xhr, settings) {
+            //             if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+            //                 xhr.setRequestHeader("X-CSRFToken", '{{ csrf_token }}');
+            //             }
+            //         }
+            //     });
+            //     $.ajax( { type: "POST",
+            //         url: '/game_board/place_building',
+            //         dataType: "json",
+            //         data: JSON.stringify(params),
+            //         contentType: "application/json; charset=utf-8",
+            //         traditional: true,
+            //         success: function(result) {
+            //             console.log(result)
+            //             console.log("Success!")
+            //             $btn.parent().html("<img src={% static 'game_board_app/images/fire_building.png' %} alt='fire building'>")
+            //         }
+            //     });
+            // });
         });
     </script>
+    <style>
+        #board-area {
+            height: 80vh;
+        }
+        .makeMeDraggable { 
+            cursor: pointer;
+        }
+        #fire {
+            
+        }
+        #water {
+            background: blue;
+        }
+        #wood {
+            background: green;
+        }
+        #metal {
+            background: purple;
+        }
+        #earth {
+            background: yellow;
+        }
+        </style>
 </head>
 <body>
     <div id="wrapper">
@@ -91,7 +161,26 @@
             </div>
         </div>
         <div id="middle-column" class="container-fluid">
-            
+            <div id="board-area">
+
+            </div>
+            <div id="footer">
+                <div id="fire" class="col-2 board-space makeMeDraggable container-fluid">
+                    <img src="{% static 'game_board_app/images/fire_building.png' %}" alt='fire building' >
+                </div>
+                <div id="water" class="col-2 board-space makeMeDraggable container-fluid">
+                    
+                </div>
+                <div id="wood" class="col-2 board-space makeMeDraggable container-fluid">
+                    
+                </div>
+                <div id="metal" class="col-2 board-space makeMeDraggable container-fluid">
+                    
+                </div>
+                <div id="earth" class="col-2 board-space makeMeDraggable container-fluid">
+                    
+                </div>
+            </div>
         </div>
         <div id="right-column" class="container-fluid">
             <div class="row player-box">
@@ -104,9 +193,6 @@
                 <p>Health</p>
                 <p><strong>10</strong></p>
             </div>
-        </div>
-        <div id="footer">
-
         </div>
     </div>
 </body>

@@ -17,7 +17,7 @@ def get_squares(request):
 			reverse_order=True
 
 	all_rows = [[]] * 8
-
+	
 	row_count = -1
 	square_count = -1
 
@@ -29,9 +29,31 @@ def get_squares(request):
 	for row in rows:
 		row_count += 1
 		all_rows[row_count] = []
+		
 		for square in Square.objects.filter(row_id=row.id).order_by('position'):
+			entity = Entity.objects.filter(id=square.entity_id)
+			
+			if len(entity):
+				entity={
+					'name': entity[0].element.name,
+					'type': entity[0].kind.lower(),
+					'image': entity[0].element.name.lower()+'_'+entity[0].kind.lower()
+				}
+			else:
+				entity={
+					'name': '',
+					'type': '',
+					'image': ''
+				}
+
+			space = {
+				'square': square,
+				'entity': entity
+			}
+
 			square_count += 1
-			all_rows[row_count].append(square.id)
+			
+			all_rows[row_count].append(space)
 
 		if reverse_order:
 			all_rows[row_count].reverse()
@@ -42,7 +64,8 @@ def get_squares(request):
 	context = {
 		"game": Game.objects.get(id=game_id),
 		"rows": all_rows,
-		"user": User.objects.filter(id=request.session['user_session'])[0]
+		"user": User.objects.filter(id=request.session['user_session'])[0],
+		'reverse_order': reverse_order
 	}
 
 	return render(request, "game_board_app/partials/game_squares.html", context)
@@ -81,15 +104,19 @@ def update_board(request):
 def place_building(request):
 	game_id = request.session['game_id']
 	body = json.loads(request.body.decode('utf-8'))
-	if request.session['player_number'] == 1:
-		row = 1
-	else:
-		row = 8
-	building = Entity.objects.place_building(request.session['user_session'],game_id,row,body['column'],body['element'])
+
+	# --- Remove as this is controlled by the the button in HTML
+	# if request.session['player_number'] == 1:
+	# 	row = 1
+	# else:
+	# 	row = 8
+
+	building = Entity.objects.place_building(request.session['user_session'],game_id,body['row'],body['column'],body['element'])
 
 	if building['errors']:
 		for tag, error in building['errors'].items():
 			messages.error(request, error, extra_tags=tag)
+	
 	return JsonResponse({"success":True})
 
 def attack(request,unit_id,target_id):
