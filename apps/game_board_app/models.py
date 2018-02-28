@@ -51,6 +51,7 @@ class GameManager(models.Manager):
 			errors['user'] = "No user or too many users found"
 
 		if not errors:
+<<<<<<< HEAD
 			player = Player.objects.create(game=game,user=User.objects.get(id=user_id),player_number=2)
 
 	def produce_units(self,game_id):
@@ -72,6 +73,9 @@ class GameManager(models.Manager):
 			for unit in units:
 				print("Move unit ",unit.id)
 				unit.move_unit(game_id, unit.id)
+=======
+			player = Player.objects.create(game=game,user=User.objects.get(id=user_id),player_number=2,health=10)
+>>>>>>> refs/remotes/origin/master
 
 class Game(models.Model):
 	level = models.PositiveSmallIntegerField()

@@ -2,9 +2,50 @@ from __future__ import unicode_literals
 from django.shortcuts import render, HttpResponse, redirect 
 from django.contrib import messages
 from django.utils.html import escape
-from .models import Game, Row, Square, Element, Entity, User
+from .models import Game, Row, Square, Element, Entity, User, Player
 import json
 from django.http import JsonResponse
+
+def get_squares(request):
+	game_id = request.session['game_id']
+	reverse_order = False
+
+	players = Player.objects.filter(game_id=game_id)
+
+	for player in players:
+		if player.user_id == request.session['user_session'] and player.player_number == 2:
+			reverse_order=True
+
+	all_rows = [[]] * 8
+
+	row_count = -1
+	square_count = -1
+
+	rows=Row.objects.filter(game_id=game_id).order_by('-position')
+
+	if reverse_order:
+		rows.reverse()
+
+	for row in rows:
+		row_count += 1
+		all_rows[row_count] = []
+		for square in Square.objects.filter(row_id=row.id).order_by('position'):
+			square_count += 1
+			all_rows[row_count].append(square.id)
+
+		if reverse_order:
+			all_rows[row_count].reverse()
+
+	if reverse_order:
+		all_rows.reverse()
+
+	context = {
+		"game": Game.objects.get(id=game_id),
+		"rows": all_rows,
+		"user": User.objects.filter(id=request.session['user_session'])[0]
+	}
+
+	return render(request, "game_board_app/partials/game_squares.html", context)
 
 def draw_board(request,game_id):
 	context = {

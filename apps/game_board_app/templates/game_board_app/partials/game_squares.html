@@ -1,0 +1,10 @@
+
+{% for row in rows %}
+    <div class="row">
+        {% for square in row %}
+            <div class="col-2 board-space">
+                {{ square }}
+            </div>
+        {% endfor %}
+    </div>
+{% endfor %}

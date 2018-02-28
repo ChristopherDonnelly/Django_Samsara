@@ -24,6 +24,17 @@
                 return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
             }
 
+            // setInterval(onTimerTick, 33); // 33 milliseconds = ~ 30 frames per sec
+            
+            onTimerTick()
+
+            function onTimerTick() {
+                $.get('/game_board/get_squares', function(res){
+                    console.log(res)
+                    $('#middle-column').html(res);
+                });
+            }
+
             $(document).on('click', '.board-space button', function(){
                 console.log('Path Number: '+$(this).attr('data-column'))
 
@@ -80,83 +91,7 @@
             </div>
         </div>
         <div id="middle-column" class="container-fluid">
-            {% csrf_token %}
-            <div class="row">
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-            </div>
-            <div class="row">
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-            </div>
-            <div class="row">
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-            </div>
-            <div class="row">
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-            </div>
-            <div class="row">
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-            </div>
-            <div class="row">
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-            </div>
-            <div class="row">
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-                <div class="col-2 board-space"></div>
-            </div>
-            <div class="row">
-                <div class="col-2 board-space">
-                    <button data-column="1"></button>
-                </div>
-                <div class="col-2 board-space">
-                    <button data-column="2"></button>
-                </div>
-                <div class="col-2 board-space">
-                    <button data-column="3"></button>
-                </div>
-                <div class="col-2 board-space">
-                    <button data-column="4"></button>
-                </div>
-                <div class="col-2 board-space">
-                    <button data-column="5"></button>
-                </div>
-                <div class="col-2 board-space">
-                    <button data-column="6"></button>
-                </div>
-            </div>
+            
         </div>
         <div id="right-column" class="container-fluid">
             <div class="row player-box">

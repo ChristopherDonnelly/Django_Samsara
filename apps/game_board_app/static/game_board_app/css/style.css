@@ -61,6 +61,11 @@ button {
     height: 10vh;
     margin: 0px;
     padding: 0px;
+    text-align: center;
+}
+.board-space img {
+    height: 9vh;
+    margin-top: 2px;
 }
 .board-space button {
     width: 102%;
