@@ -53,24 +53,22 @@ class GameManager(models.Manager):
 		if not errors:
 			player = Player.objects.create(game=game,user=User.objects.get(id=user_id),player_number=2)
 
-	def produce_units(self,game_id):
-		buildings = Entity.objects.filter(square__in=Square.objects.filter(row__game_id=game_id),kind='Building')
+	def complete_turn(self,game_id):
+		games = Game.objects.filter(id=game_id)
+		if games.count() == 1:
+			game = games[0]
+			print("Turn: ",game.turn)
+		else:
+			errors['game'] = "No game or too many games found"
 
-		for building in buildings:
-			building.produce_unit(game_id, building.id)
+		game.move_units()
+		game.produce_units()
 
-	def move_units(self,game_id):
-		players = Player.objects.filter(game_id=game_id)
-
-		for player in players:
-			if player.player_number == 1:
-				units = Entity.objects.player_units(player.id,game_id).order_by('-square__row__position')
-			else:
-				units = Entity.objects.player_units(player.id,game_id).order_by('square__row__position')
-
-			for unit in units:
-				print("Move unit ",unit.id)
-				unit.move_unit(game_id, unit.id)
+		if game.turn == 1:
+			game.turn = 2
+		else:
+			game.turn = 1
+		game.save()
 
 class Game(models.Model):
 	level = models.PositiveSmallIntegerField()
@@ -80,6 +78,41 @@ class Game(models.Model):
 
 	objects = GameManager()
 
+	def produce_units(self):
+		buildings = self.player_units('Building').order_by('square__row__position')
+
+		for building in buildings:
+			building.produce_unit()
+
+	def move_units(self):
+		if self.turn == 1:
+			# CHANGEME (when mirroring issue is fixed)
+			units = self.player_units('Unit').order_by('square__row__position')
+		else:
+			units = self.player_units('Unit').order_by('-square__row__position')
+
+		for unit in units:
+			print("Unit {} {}".format(unit,unit.element.name))
+			unit.move_unit()
+
+
+	def player_units(self,kind):
+		player = Player.objects.raw("SELECT p.* FROM game_board_app_player p, game_board_app_game g "\
+			"WHERE p.player_number=g.turn AND p.game_id=g.id AND g.id="+str(self.id))
+		if len(list(player)):
+			return Entity.objects.filter(owner_id=player[0].user_id,square__in=Square.objects.filter(row__game_id=self.id),kind=kind)
+		else:
+			return Entity.objects.filter(owner_id=None)
+
+	def attackEnemy(self):
+		# Get the other player's object (the player whose turn it isn't)
+		print("Attacking enemy!")
+		enemies = Player.objects.filter(game_id=self.id).exclude(player_number=self.turn)
+		if enemies.count() == 1:
+			enemies[0].attack()
+		else:
+			print("No enemy player found")
+
 class Player(models.Model):
 	game = models.ForeignKey(Game, related_name="players",on_delete=models.PROTECT)
 	user = models.ForeignKey(User,on_delete=models.PROTECT)
@@ -87,6 +120,10 @@ class Player(models.Model):
 	health = models.IntegerField(default=10)
 	created_at = models.DateTimeField(auto_now_add = True)
 	updated_at = models.DateTimeField(auto_now = True)
+
+	def attack(self):
+		self.health -= 1
+		self.save()
 
 # insert into game_board_app_element (name,color,created_at,updated_at) values ('fire','red','2/24/2018','2/24/2018')
 class Element(models.Model):
@@ -113,111 +150,119 @@ class EntityManager(models.Manager):
 			errors['square'] = "No square or too many squares found"
 
 		if not errors:
-			entity = Entity.objects.create(element=Element.objects.get(name=element),level=0,kind='Building',owner=User.objects.get(id=user_id))
+			entity = Entity.objects.create(element=Element.objects.get(name=element),level=5,health=5,kind='Building',owner=User.objects.get(id=user_id))
+			print(entity)
 			square.entity = entity
+			print (square)
 			square.save()
 
 		return {"errors":errors, "entity": entity}
-
-	def player_units(self,player_id,game_id):
-		player = Player.objects.get(id=player_id)
-		user = User.objects.get(id=player.user_id)
-		return Entity.objects.filter(owner_id=user.id,square__in=Square.objects.filter(row__game_id=game_id),kind='Unit')
 
 # insert into game_board_app_entity (element_id,level,owner_id,created_at,updated_at,kind) values (1,1,1,'2/24/2018','2/24/2018','Building')
 class Entity(models.Model):
 	kind = models.CharField(max_length=50,default="Building")
 	element = models.ForeignKey(Element, related_name="entity",on_delete=models.PROTECT)
 	level = models.PositiveSmallIntegerField(default=1)
+	health = models.PositiveSmallIntegerField(default=1)
 	owner = models.ForeignKey(User, related_name="entity",on_delete=models.PROTECT)
 	created_at = models.DateTimeField(auto_now_add = True)
 	updated_at = models.DateTimeField(auto_now = True)
 
-	def attack(self,unit_id,target_id):
+	def attack(self,target_entity):
 		entity_relationship = { "fire": ["wood","metal"],
 								"wood": ["earth","water"],
 								"earth": ["water","fire"],
 								"water": ["metal","fire"],
 								"metal": ["wood","earth"]
 								}
-		errors = {}
-		player_unit = None
-		target_entity = None
 
-		player_units = Entity.objects.filter(id=unit_id)
-		if player_units.count() == 1:
-			player_unit = player_units[0]
+		if self.element == target_entity.element:
+			self.health -= 1
+			target_entity.health -= 1
+		elif target_entity.element.name in entity_relationship[self.element.name]:
+			target_entity.health -= 1
+			print("Player ({}) beats target ({})".format(self.element.name,target_entity.element.name))
 		else:
-			errors['player_unit'] = "No unit or too many units found"
+			self.health -= 1
+			print("Player ({}) loses to target ({})".format(self.element.name,target_entity.element.name))
 
-		target_entities = Entity.objects.filter(id=target_id)
-		if target_entities.count() == 1:
-			target_entity = target_entities[0]
-		else:
-			errors['target_entity'] = "No target or too many targets found"
-
-		if not errors:
-			result = None
-
-			if player_unit.element == target_entity.element:
-				print("Same element")
-			elif target_entity.element.name in entity_relationship[player_unit.element.name]:
-				print("Player ({}) beats target ({})").format(player_unit.element.name,target_entity.element.name)
-			else:
-				print("Player ({}) loses to target ({})").format(player_unit.element.name,target_entity.element.name)
-
-		return errors
+		self.save()
+		target_entity.save()
+		target_entity.check_unit()
 
 	objects = EntityManager()
 
-	def move_unit(self,game_id,unit_id):
-		print("Self ", self)
-		player_number = Player.objects.filter(user_id=self.owner_id).values('player_number')[0]['player_number']
-		unit = Entity.objects.get(id=unit_id)
-
-		position = unit.square.row.position
-		if player_number == 1:
-			new_position = position+1
+	def check_unit(self):
+		if self.health == 0:
+			# Unit has died; remove it from the board
+			print("Removing unit {}, element:{}, owner:{}".format(self, self.element.name, self.owner.name))
+			square = self.square
+			square.entity = None
+			square.save()
+			self.delete()
+			return False
 		else:
+			return True
+
+	def move_unit(self):
+		player_number = Player.objects.filter(user_id=self.owner_id).values('player_number')[0]['player_number']
+		position = self.square.row.position
+		
+		# CHANGEME (when board mirroring is fixed)
+		if player_number == 1:
 			new_position = position-1
+		else:
+			new_position = position+1
 
 		# Check to make sure the destination square is empty
-		print("Move positions", game_id,new_position,unit.square.position,unit.id)
-		new_squares = Square.objects.filter(row__game_id=game_id,row__position=new_position,position=unit.square.position)		
-		if new_squares.count() == 1 and not new_squares[0].entity:
+		new_squares = Square.objects.filter(row__game_id=self.square.row.game_id,row__position=new_position,position=self.square.position)		
+
+		# If we're about to go off the game board
+		if not new_squares:
+			# If we're in the enemy's base row, we can do damage (though this unit will die)
+			if self.square.inEnemyBaseRow(player_number):
+				self.health = 0
+				self.save()
+				self.square.row.game.attackEnemy()
+		# If the square we're trying to move into isn't empty
+		elif new_squares[0].entity:
+			# If this player doesn't own the unit, attack it
+			if self.owner != new_squares[0].entity.owner:
+				self.attack(new_squares[0].entity)
+
+		# If we survived any attacks, move the unit forward
+		if self.check_unit() and new_squares.count() == 1 and not new_squares[0].entity:
 			new_square = new_squares[0]
+
 			# Clear out the unit's current square
-			prev_square = unit.square
+			prev_square = self.square
 			prev_square.entity = None
 			prev_square.save()
 
 			# Set the contents of the new square
-			new_square.entity = unit
+			new_square.entity = self
 			new_square.save()
 
-			print(new_square.entity)
+	def produce_unit(self):
+		position = self.square.row.position
+		game_id = self.square.row.game_id
 
-			print("Moved unit ",unit.id)
-		else:
-			print(new_squares[0].entity)
-
-	def produce_unit(self,game_id,building_id):
-		player_number = Player.objects.filter(user_id=self.owner_id).values('player_number')[0]['player_number']
-		building = Entity.objects.get(id=building_id)
-
-		position = building.square.row.position
-		if player_number == 1:
+		# CHANGEME (when board mirroring is fixed)
+		if position == 1:
 			new_position = 2
 		else:
 			new_position = 7
 
-		print("Produce positions", game_id,new_position,building.square.position,building.id)
-		new_square = Square.objects.get(row__game_id=game_id,row__position=new_position,position=building.square.position)		
+		print("Producing for building {}".format(self.element.name))
+		new_square = Square.objects.get(row__game_id=game_id,row__position=new_position,position=self.square.position)		
 		if not new_square.entity:
-			unit = Entity.objects.create(kind='Unit',element=building.element,owner=building.owner)
+			print("Producing for building {}, element:{}, owner:{}".format(self,self.element.name,self.owner.name))
+			unit = Entity.objects.create(kind='Unit',element=self.element,owner=self.owner)
 			# Set the contents of the new square
 			new_square.entity = unit
 			new_square.save()
+		else:
+			print("Found entity: {} {}".format(new_square.entity,new_square.entity.element.name))
 
 class Row(models.Model):
 	position = models.PositiveSmallIntegerField() # Positions 1-5
@@ -233,3 +278,10 @@ class Square(models.Model):
 	row = models.ForeignKey(Row, related_name="squares",on_delete=models.PROTECT)
 	created_at = models.DateTimeField(auto_now_add = True)
 	updated_at = models.DateTimeField(auto_now = True)
+
+	def inEnemyBaseRow(self,player_number):
+		# CHANGEME when mirroring issue fixed
+		if player_number == 1:
+			return self.row.position == 1
+		else:
+			return self.row.position == 8
