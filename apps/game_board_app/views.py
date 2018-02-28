@@ -32,7 +32,6 @@ def populate_board(request):
 	request.session['player_number'] = 1
 	return redirect('draw_board/{}'.format(game.id))
 
-
 def update_board(request):
 	if request.method == 'POST':
 		print (request.POST)
@@ -41,9 +40,31 @@ def update_board(request):
 def place_building(request):
 	game_id = request.session['game_id']
 	body = json.loads(request.body.decode('utf-8'))
-	building = Entity.objects.place_building(request.session['user_session'],game_id,body['row'],body['column'],body['element'])
+	if request.session['player_number'] == 1:
+		row = 1
+	else:
+		row = 8
+	building = Entity.objects.place_building(request.session['user_session'],game_id,row,body['column'],body['element'])
 
 	if building['errors']:
 		for tag, error in building['errors'].items():
 			messages.error(request, error, extra_tags=tag)
 	return JsonResponse({"success":True})
+
+def attack(request,unit_id,target_id):
+	Unit.attack(unit_id,target_id)
+
+	return HttpResponse("Completed attack")
+
+# When the player runs out of activity points
+def complete_turn(request):
+	# Units move one space each
+	Game.objects.move_units(request.session['game_id'])
+
+	# Every building with enough resources will produce a unit
+	Game.objects.produce_units(request.session['game_id'])
+
+	return HttpResponse("Completed turn")
+
+
+
