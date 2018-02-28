@@ -51,7 +51,27 @@ class GameManager(models.Manager):
 			errors['user'] = "No user or too many users found"
 
 		if not errors:
-			player = Player.objects.create(game=game,user=User.objects.get(id=user_id),player_number=2,score=0)
+			player = Player.objects.create(game=game,user=User.objects.get(id=user_id),player_number=2)
+
+	def produce_units(self,game_id):
+		buildings = Entity.objects.filter(square__in=Square.objects.filter(row__game_id=game_id),kind='Building')
+
+		for building in buildings:
+			print("Produce unit for ",building.id)
+			building.produce_unit(game_id, building.id)
+
+	def move_units(self,game_id):
+		players = Player.objects.filter(game_id=game_id)
+
+		for player in players:
+			if player.player_number == 1:
+				units = Entity.objects.player_units(player.id,game_id).order_by('-square__row__position')
+			else:
+				units = Entity.objects.player_units(player.id,game_id).order_by('-square__row__position')
+
+			for unit in units:
+				print("Move unit ",unit.id)
+				unit.move_unit(game_id, unit.id)
 
 class Game(models.Model):
 	level = models.PositiveSmallIntegerField()
@@ -65,7 +85,7 @@ class Player(models.Model):
 	game = models.ForeignKey(Game, related_name="players",on_delete=models.PROTECT)
 	user = models.ForeignKey(User,on_delete=models.PROTECT)
 	player_number = models.PositiveSmallIntegerField()
-	health = models.IntegerField()
+	health = models.IntegerField(default=10)
 	created_at = models.DateTimeField(auto_now_add = True)
 	updated_at = models.DateTimeField(auto_now = True)
 
@@ -77,7 +97,6 @@ class Element(models.Model):
 	updated_at = models.DateTimeField(auto_now = True)
 
 class EntityManager(models.Manager):
-
 	def place_building(self,user_id,game_id,row,column,element):
 		errors = {}
 		entity = None
@@ -101,16 +120,104 @@ class EntityManager(models.Manager):
 
 		return {"errors":errors, "entity": entity}
 
+	def player_units(self,player_id,game_id):
+		player = Player.objects.get(id=player_id)
+		user = User.objects.get(id=player.user_id)
+		return Entity.objects.filter(owner_id=user.id,square__in=Square.objects.filter(row__game_id=game_id),kind='Unit')
+
 # insert into game_board_app_entity (element_id,level,owner_id,created_at,updated_at,kind) values (1,1,1,'2/24/2018','2/24/2018','Building')
 class Entity(models.Model):
 	kind = models.CharField(max_length=50,default="Building")
 	element = models.ForeignKey(Element, related_name="entity",on_delete=models.PROTECT)
-	level = models.PositiveSmallIntegerField()	
+	level = models.PositiveSmallIntegerField(default=1)
 	owner = models.ForeignKey(User, related_name="entity",on_delete=models.PROTECT)
 	created_at = models.DateTimeField(auto_now_add = True)
 	updated_at = models.DateTimeField(auto_now = True)
 
+	def attack(self,unit_id,target_id):
+		entity_relationship = { "fire": ["wood","metal"],
+								"wood": ["earth","water"],
+								"earth": ["water","fire"],
+								"water": ["metal","fire"],
+								"metal": ["wood","earth"]
+								}
+		errors = {}
+		player_unit = None
+		target_entity = None
+
+		player_units = Entity.objects.filter(id=unit_id)
+		if player_units.count() == 1:
+			player_unit = player_units[0]
+		else:
+			errors['player_unit'] = "No unit or too many units found"
+
+		target_entities = Entity.objects.filter(id=target_id)
+		if target_entities.count() == 1:
+			target_entity = target_entities[0]
+		else:
+			errors['target_entity'] = "No target or too many targets found"
+
+		if not errors:
+			result = None
+
+			if player_unit.element == target_entity.element:
+				print("Same element")
+			elif target_entity.element.name in entity_relationship[player_unit.element.name]:
+				print("Player ({}) beats target ({})").format(player_unit.element.name,target_entity.element.name)
+			else:
+				print("Player ({}) loses to target ({})").format(player_unit.element.name,target_entity.element.name)
+
+		return errors
+
 	objects = EntityManager()
+
+	def move_unit(self,game_id,unit_id):
+		player_number = Player.objects.filter(user_id=self.owner_id).values('player_number')[0]['player_number']
+		unit = Entity.objects.get(id=unit_id)
+
+		position = unit.square.row.position
+		if player_number == 1:
+			new_position = position+1
+		else:
+			new_position = position-1
+
+		# Check to make sure the destination square is empty
+		print("Move positions", game_id,new_position,unit.square.position,unit.id)
+		new_squares = Square.objects.filter(row__game_id=game_id,row__position=new_position,position=unit.square.position)		
+		if new_squares.count() == 1 and not new_squares[0].entity:
+			new_square = new_squares[0]
+			# Clear out the unit's current square
+			prev_square = unit.square
+			prev_square.entity = None
+			prev_square.save()
+
+			# Set the contents of the new square
+			new_square.entity = unit
+			new_square.save()
+
+			print(new_square.entity)
+
+			print("Moved unit ",unit.id)
+		else:
+			print(new_squares[0].entity)
+
+	def produce_unit(self,game_id,building_id):
+		player_number = Player.objects.filter(user_id=self.owner_id).values('player_number')[0]['player_number']
+		building = Entity.objects.get(id=building_id)
+
+		position = building.square.row.position
+		if player_number == 1:
+			new_position = 2
+		else:
+			new_position = 7
+
+		print("Produce positions", game_id,new_position,building.square.position,building.id)
+		new_square = Square.objects.get(row__game_id=game_id,row__position=new_position,position=building.square.position)		
+		if not new_square.entity:
+			unit = Entity.objects.create(kind='Unit',element=building.element,owner=building.owner)
+			# Set the contents of the new square
+			new_square.entity = unit
+			new_square.save()
 
 class Row(models.Model):
 	position = models.PositiveSmallIntegerField() # Positions 1-5
@@ -119,8 +226,9 @@ class Row(models.Model):
 	updated_at = models.DateTimeField(auto_now = True)
 
 # insert into game_board_app_square (status,building_id,unit_id,position,row_id,created_at,updated_at) values ('Building',1,NULL,2,1,'2/24/2018','2/24/2018')
+# update game_board_app_square set entity_id=NULL where id >= 1757 and id <= 1762
 class Square(models.Model):
-	entity = models.ForeignKey(Entity, related_name="square",null=True,on_delete=models.SET_NULL)
+	entity = models.OneToOneField(Entity, related_name="square",null=True,on_delete=models.SET_NULL)
 	position = models.PositiveSmallIntegerField() # Positions 1-10
 	row = models.ForeignKey(Row, related_name="squares",on_delete=models.PROTECT)
 	created_at = models.DateTimeField(auto_now_add = True)
