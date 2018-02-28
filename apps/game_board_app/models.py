@@ -57,7 +57,6 @@ class GameManager(models.Manager):
 		buildings = Entity.objects.filter(square__in=Square.objects.filter(row__game_id=game_id),kind='Building')
 
 		for building in buildings:
-			print("Produce unit for ",building.id)
 			building.produce_unit(game_id, building.id)
 
 	def move_units(self,game_id):
@@ -67,7 +66,7 @@ class GameManager(models.Manager):
 			if player.player_number == 1:
 				units = Entity.objects.player_units(player.id,game_id).order_by('-square__row__position')
 			else:
-				units = Entity.objects.player_units(player.id,game_id).order_by('-square__row__position')
+				units = Entity.objects.player_units(player.id,game_id).order_by('square__row__position')
 
 			for unit in units:
 				print("Move unit ",unit.id)
@@ -172,6 +171,7 @@ class Entity(models.Model):
 	objects = EntityManager()
 
 	def move_unit(self,game_id,unit_id):
+		print("Self ", self)
 		player_number = Player.objects.filter(user_id=self.owner_id).values('player_number')[0]['player_number']
 		unit = Entity.objects.get(id=unit_id)
 
