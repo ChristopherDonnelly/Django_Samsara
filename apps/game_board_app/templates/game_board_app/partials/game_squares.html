@@ -1,9 +1,15 @@
 
 {% for row in rows %}
     <div class="row">
-        {% for square in row %}
+        {% for space in row %}
             <div class="col-2 board-space">
-                {{ square }}
+                {% if space.square.entity_id != None %}
+                    <img id="{{space.square.entity_id}}" src="../../static/game_board_app/images/{{space.entity.image}}.png" alt='{{space.entity.name}} {{space.entity.type}}' >
+                {% else %}
+                    {% if not reverse_order and forloop.parentloop.counter == 8 or reverse_order and forloop.parentloop.counter == 1 %}
+                        <div data-row="{{forloop.parentloop.counter}}" data-column="{{forloop.counter}}" class="makeMeDroppable"></div>
+                    {% endif %}
+                {% endif %}
             </div>
         {% endfor %}
     </div>

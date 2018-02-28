@@ -9,7 +9,7 @@
 }
 #left-column, #right-column {
     width: 19%;
-    height: 80vh;
+    height: 90vh;
 }
 #left-column button {
     height: 40px;
@@ -67,17 +67,18 @@ button {
     height: 9vh;
     margin-top: 2px;
 }
-.board-space button {
+.board-space div {
     width: 102%;
     height: 10vh;
     margin-left: -1px;
-    margin-top: -1px;
     background-color: transparent;
     border: none;
 }
 #footer {
     margin-top: 5px;
     border: 1px solid black;
-    width: 79.5%;
+    margin-right: -15px;
+    margin-left: -15px;
+    text-align: center;
     height: 10vh;
 }
