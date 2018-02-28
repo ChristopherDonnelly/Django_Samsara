@@ -82,3 +82,26 @@ button {
     text-align: center;
     height: 10vh;
 }
+#board-area {
+    height: 80vh;
+}
+.makeMeDraggable { 
+    cursor: pointer;
+}
+#info-layer {
+    border: 1px solid black;
+    height: 10vh;
+    margin-top: 5px;
+    padding: 10px;
+}
+#info-layer p {
+    line-height: 0.5em;
+    text-transform: capitalize;
+}
+#header {
+    text-align: center;
+}
+#header h2 {
+    display: block;
+    width: 100%;
+}

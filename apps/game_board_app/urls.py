@@ -7,6 +7,7 @@ urlpatterns = [
     url(r'^update_board$',views.update_board),
     url(r'^get_squares',views.get_squares),
     url(r'^draw_board/(\d+)$', views.draw_board),
+    url(r'^get_players_info', views.get_players_info),
    	url(r'^place_building', views.place_building),
    	url(r'^attack', views.attack),
    	url(r'^complete_turn', views.complete_turn)

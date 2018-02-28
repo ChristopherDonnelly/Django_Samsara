@@ -24,7 +24,7 @@ class UserManager(models.Manager):
                 user=exists[0]
                 hashed=user.password
 
-                if bcrypt.hashpw(password.encode(), hashed.encode()) != hashed.encode():
+                if bcrypt.hashpw(password.encode(), hashed.encode()).decode('utf-8') != hashed:
                     errors["login_password"] = "Password does not match password on file."
                 else:
                     response['user'] = user
@@ -71,7 +71,8 @@ class UserManager(models.Manager):
             exists = User.objects.filter(username = username)
 
             if not len(exists):
-                pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt())
+
+                pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode('utf-8')
 
                 user = User.objects.create(name = name, username = username, password = pw_hash )
                 response['user'] = user
