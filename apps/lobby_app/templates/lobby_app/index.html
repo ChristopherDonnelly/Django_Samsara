@@ -7,16 +7,68 @@
     <body>
 	    <div id="wrapper">
 	    	<div id="mainbox">
-	    		{% if games %}
-		  			{% for game in games %}
-		  				{% if game.players.count < 2 %}
-			  				<a href="join_game/{{game.id}}">Join game {{game.id}} {{game.players.count}}</a>
-			  			{% endif %}
-		  				<a href="/game_board/draw_board/{{game.id}}">View game {{game.id}}</a>
-		  				<a href="delete_game/{{game.id}}">Delete game {{game.id}}</a><br/>
-		  			{% endfor %}
-		  		{% endif %}
-	  		</div>
+				<!-- games user hosted -->
+				<table>
+					<thead>
+						<th>Game</th>
+						<th>No. Players in Game</th>
+						<th>Actions<th>
+						<th>Who's Playing</th>
+						<th>Whose Turn</th>
+					</thead>
+					<tbody>
+						{% if curr_players_game %}
+							{% for game in curr_players_game %}
+								<tr>
+									<td>{{ game.id }}</td>
+									<td>{{ game.players.count }}</td>
+									<td><a href="/game_board/draw_board/{{game.id}}">Continue Game</a> 
+										{% if game.players.all.0.user_id == request.session.user_session %}
+											, <a href="delete_game/{{game.id}}">Delete Game, </a>
+										{% endif %}
+									</td>
+									<td>{{ game.players.first.user.name }} 
+										{% if game.players.count > 1 %} 
+											, {{ game.players.last.user.name }}
+										{% endif %}
+									</td>
+						
+								</tr>
+							{% endfor %}
+						{% endif %}
+					</tbody>
+				</table>
+				<!-- games other players hosted -->
+				<table>
+					<thead>
+						<th>Game</th>
+						<th>No. Players in Game</th>
+						<th>Actions</th>
+						<th>Who's Playing</th>
+						<th>Whose Turn</th>
+					</thead>
+					<tbody>
+						{% if others_games %}
+							{% for game in others_games %}
+								<tr>
+									<td>{{ game.id }}</td>
+									<td>{{ game.players.count }}</td>
+									<td>
+										{% if game.players.count < 2 %}
+											<a href="join_game/{{game.id}}">Join Game</a>, 
+										{% endif %} <a href="/game_board/draw_board/{{game.id}}">View game</a>
+									</td>
+									<td>{{ game.players.first.user.name }} 
+										{% if game.players.count > 1 %} 
+											, {{ game.players.last.user.name }}
+										{% endif %}
+									</td>
+								</tr>
+							{% endfor %}
+						{% endif %}
+					</tbody>
+				</table>
+			</div>
 
 	  		<form action="/game_board/populate_board" method="post">
 				{% csrf_token %} 

@@ -47,7 +47,7 @@ button {
 }
 .player-hp p {
     width: 100%;
-    padding-top: 10px;
+    padding-top: 0px;
     padding-bottom: 0px;
     margin: 0px;
 }
@@ -57,15 +57,11 @@ button {
     margin: 0px;
 }
 .board-space {
-    border: 1px solid black;
+    border: 1px inset #c6e57b;
     height: 10vh;
     margin: 0px;
     padding: 0px;
     text-align: center;
-}
-.board-space img {
-    height: 9vh;
-    margin-top: 2px;
 }
 .board-space div {
     width: 102%;
@@ -88,6 +84,11 @@ button {
 .makeMeDraggable { 
     cursor: pointer;
 }
+.makeMeDraggable img, .board-space img {
+    height: 9vh;
+    margin-top: 2px;
+}
+
 #info-layer {
     border: 1px solid black;
     height: 10vh;
@@ -100,6 +101,14 @@ button {
 }
 #header {
     text-align: center;
+    height: 6vh;
+    border: 1px solid black;
+    border-radius: 20px;
+    padding-top: 3px;
+    margin-bottom: 8px;
+    width: 59%;
+    margin-left: 20%;
+    box-shadow: 3px 3px 3px darkgrey;
 }
 #header h2 {
     display: block;
@@ -116,4 +125,28 @@ button {
 
 #button-box {
     width: 100%;
+}
+
+.land {
+    background-size: cover;
+    background-repeat: no-repeat;
+}
+.land1 {
+    background-image: url(../images/land1.png);
+}
+.land2 {
+    background-image: url(../images/land2.png);
+}
+.land3 {
+    background-image: url(../images/land3.png);
+}
+.land4 {
+    background-image: url(../images/land4.png);
+}
+.land5 {
+    background-image: url(../images/land5.png);
+}
+
+.btn-info {
+    box-shadow: 3px 3px 3px darkgrey;
 }
