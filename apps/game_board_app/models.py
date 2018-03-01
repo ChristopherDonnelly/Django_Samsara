@@ -288,7 +288,6 @@ class Entity(models.Model):
 			if self.owner != new_squares[0].entity.owner:
 				self.attack(new_squares[0].entity)
 
-		print("New square {}, new row {}, player_number {}".format(new_squares[0],new_position,player_number))
 		# If we survived any attacks, move the unit forward
 		if self.check_unit() and new_squares.count() == 1 and not new_squares[0].entity:
 			new_square = new_squares[0]
