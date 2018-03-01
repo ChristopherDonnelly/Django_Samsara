@@ -65,12 +65,14 @@ def get_squares(request):
 				entity={
 					'name': entity[0].element.name,
 					'type': entity[0].kind.lower(),
+					'health': entity[0].health,
 					'image': entity[0].element.name.lower()+'_'+entity[0].kind.lower()
 				}
 			else:
 				entity={
 					'name': '',
 					'type': '',
+					'health': 0,
 					'image': ''
 				}
 

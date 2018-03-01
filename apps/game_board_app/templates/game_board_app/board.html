@@ -60,6 +60,10 @@
                                 console.log(result)
                                 console.log("Success!")
                                 //$btn.parent().html("<img src={% static 'game_board_app/images/fire_building.png' %} alt='fire building'>")
+                                $.get('/game_board/get_squares', function(res){
+                                    $('#board-area').html(res);
+                                    findDroppables();
+                                });
                             }
                         });
                     }
@@ -77,34 +81,36 @@
 
             function onTimerTick() {
                 $.get('/game_board/get_squares', function(res){
-                    console.log(res)
                     $('#board-area').html(res);
                     findDroppables();
+
+                    $.get('/game_board/get_players_info', function(res){
+                        console.log(res)
+                        $('#player1_name').html(res.current_player);
+                        $('#player1_health').html(res.current_player_health);
+                        
+                        $('#player2_name').html(res.opponent);
+                        $('#player2_health').html(res.opponent_health);
+                        
+                        if(res.current_player_turn){
+                            clearInterval(waitTurn);
+                            $('#complete_turn').removeAttr('disabled');
+                            makeDraggables();
+                        }else{
+                            $('#complete_turn').attr('disabled','disabled');
+                            onTimerTick();
+                        }
+
+                        updatePlayersTurn(res.turn);
+
+                    }, "json");
                 });
             }
-            
+
             $(document).on('click', 'button.navbar-btn', function(){
                 clearInterval(waitTurn);
                 window.location = '/lobby';
             });
-
-            $.get('/game_board/get_players_info', function(res){
-                $('#player1_name').html(res.current_player);
-                $('#player1_health').html(res.current_player.health);
-                
-                $('#player2_name').html(res.opponent);
-                $('#player2_health').html(res.opponent.health);
-                
-                if(res.current_player_turn){
-                    clearInterval(waitTurn);
-                    makeDraggables();
-                }else{
-                    waitTurn = setInterval(onTimerTick, 33);
-                }
-
-                updatePlayersTurn(res.turn);
-
-            }, "json");
 
             $(document).on('mouseenter', '.entity', function(){
                 displayInfo($(this));
@@ -123,6 +129,12 @@
             function updatePlayersTurn(playerName){
                 $('#header h2').text(playerName+"'s Turn");
             }
+
+            $(document).on('click', '#complete_turn', function(){
+                $.get('/game_board/complete_turn', function(res){
+                    onTimerTick();
+                });
+            });
 
         });
     </script>
@@ -146,8 +158,7 @@
 
             <div class="align-self-end">
                 <div class="row player-hp">
-                    <p>Health</p>
-                    <p><strong id="player1_health">10</strong></p>
+                    <p>Health: <strong id="player1_health">10</strong></p>
                 </div>
                 <div class="row player-box">
                     <div>
@@ -193,8 +204,15 @@
                 <p id="player2_name">Player 2</p>
             </div>
             <div class="row player-hp">
-                <p>Health</p>
-                <p><strong id="player2_health">10</strong></p>
+                <p>Health: <strong id="player2_health">10</strong></p>
+            </div>
+
+            <div id="button-layer" class="row">
+                <div id="button-box">
+                    <button id="complete_turn" type="button" class="btn btn-info end-turn-btn">
+                        End Turn
+                    </button>
+                </div>
             </div>
         </div>
     </div>
