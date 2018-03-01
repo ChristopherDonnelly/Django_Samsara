@@ -7,16 +7,61 @@
     <body>
 	    <div id="wrapper">
 	    	<div id="mainbox">
-	    		{% if games %}
-		  			{% for game in games %}
-		  				{% if game.players.count < 2 %}
-			  				<a href="join_game/{{game.id}}">Join game {{game.id}} {{game.players.count}}</a>
-			  			{% endif %}
-		  				<a href="/game_board/draw_board/{{game.id}}">View game {{game.id}}</a>
-		  				<a href="delete_game/{{game.id}}">Delete game {{game.id}}</a><br/>
-		  			{% endfor %}
-		  		{% endif %}
-	  		</div>
+				<!-- games user hosted -->
+				<table>
+					<thead>
+						<th>Game</th>
+						<th>No. Players in Game</th>
+						<th>Actions<th>
+						<th>Who's Playing</th>
+					</thead>
+					<tbody>
+						{% if hosted_games %}
+							{% for game in hosted_games %}
+								<tr>
+									<td>{{ game.id }}</td>
+									<td>{{ game.players.count }}</td>
+									<td><a href="/game_board/draw_board/{{game.id}}">Continue Game</a>, <a href="delete_game/{{game.id}}">Delete Game</a></td>
+									<td>{{ game.players.first }} 
+										{% if game.players.count > 1 %} 
+											, {{ game.players.last }}
+										{% endif %}
+									</td>
+								</tr>
+							{% endfor %}
+						{% endif %}
+					</tbody>
+				</table>
+				<!-- games other players hosted -->
+				<table>
+					<thead>
+						<th>Game</th>
+						<th>No. Players in Game</th>
+						<th>Actions</th>
+						<th>Who's Playing</th>
+					</thead>
+					<tbody>
+						{% if others_games %}
+							{% for game in others_games %}
+								<tr>
+									<td>{{ game.id }}</td>
+									<td>{{ game.players.count }}</td>
+									<td>
+										{% if game.players.count < 2 %}
+											<a href="join_game/{{game.id}}">Join game {{game.id}}</a>, 
+										{% endif %} <a href="/game_board/draw_board/{{game.id}}">View game</a>
+									</td>
+									<td>{{ game.players.first }} 
+										{% if game.players.count > 1 %} 
+											, {{ game.players.last }}
+										{% endif %}
+								</td>
+								</tr>
+							{% endfor %}
+						{% endif %}
+					</tbody>
+				</table>
+			</div>
 
 	  		<form action="/game_board/populate_board" method="post">
 				{% csrf_token %} 
