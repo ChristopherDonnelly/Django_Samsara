@@ -163,5 +163,9 @@ def complete_turn(request):
 
 	return HttpResponse("Completed turn")
 
-
+def produce_unit(request,building_id):
+	produce_validate = Game.objects.produce_unit(request.session['game_id'],request.session['user_session'],building_id)
+	print("Produce ", produce_validate['errors'])
+	# Add return value that indicates success or failure, depending on resources
+	return JsonResponse({"success":True})
 

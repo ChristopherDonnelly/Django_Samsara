@@ -30,30 +30,55 @@ class GameManager(models.Manager):
 		return {"errors": errors, "game":game}
 
 	def delete_game(self,game_id):
-		Entity.objects.filter(square__in=Square.objects.filter(row__in=Row.objects.filter(game_id=game_id))).delete()
-		Square.objects.filter(row__in=Row.objects.filter(game=Game.objects.get(id=game_id))).delete()
-		Row.objects.filter(game=Game.objects.get(id=game_id)).delete()
-		Player.objects.filter(game_id=game_id).delete()
-		Game.objects.get(id=game_id).delete()
+		errors = {}
+		game = Game.objects.filter(id=game_id)
+		if game.count() == 1:
+			Entity.objects.filter(square__in=Square.objects.filter(row__in=Row.objects.filter(game_id=game_id))).delete()
+			Square.objects.filter(row__in=Row.objects.filter(game=Game.objects.get(id=game_id))).delete()
+			Row.objects.filter(game=Game.objects.get(id=game_id)).delete()
+			Player.objects.filter(game_id=game_id).delete()
+			Game.objects.get(id=game_id).delete()
+		else:
+			errors['game'] = "No game or too many games found."
+		return {"errors": errors}
 
 	def join_game(self,game_id,user_id):
-		errors = {}
-		games = Game.objects.filter(id=game_id)
-		if games.count() == 1:
-			game = games[0]
-		else:
-			errors['game'] = "No game or too many games found"
-
-		users = User.objects.filter(id=user_id)
-		if users.count() == 1:
-			user = users[0]
-		else:
-			errors['user'] = "No user or too many users found"
+		game_check = Game.objects.check_game_id(game_id)
+		game = game_check['game']
+		errors = game_check['errors']
 
 		if not errors:
-			player = Player.objects.create(game=game,user=User.objects.get(id=user_id),player_number=2)
+			users = User.objects.filter(id=user_id)
+			if users.count() == 1:
+				user = users[0]
+			else:
+				errors['user'] = "No user or too many users found"
+
+			if not errors:
+				player = Player.objects.create(game=game,user=User.objects.get(id=user_id),player_number=2)
+
+		return {"errors": errors}
 
 	def complete_turn(self,game_id):
+		game_check = Game.objects.check_game_id(game_id)
+		game = game_check['game']
+
+		if not game_check['errors']:
+			game.move_units()
+			#game.produce_units()
+
+			if game.turn == 1:
+				game.turn = 2
+			else:
+				game.turn = 1
+			game.save()
+
+		return {"errors": game_check['errors']}
+
+	def check_game_id(self,game_id):
+		errors = {}
+		game = None
+
 		games = Game.objects.filter(id=game_id)
 		if games.count() == 1:
 			game = games[0]
@@ -61,14 +86,38 @@ class GameManager(models.Manager):
 		else:
 			errors['game'] = "No game or too many games found"
 
-		game.move_units()
-		game.produce_units()
+		if game and game.isOver():
+			errors['game_over'] = "This game is over."
 
-		if game.turn == 1:
-			game.turn = 2
+		return {"errors":errors, "game":game}
+
+	def produce_unit(self,game_id,user_id,building_id):
+		game_check = Game.objects.check_game_id(game_id)
+		game = game_check['game']
+		errors = game_check['errors']
+		player = None
+
+		players = Player.objects.filter(game_id=game_id,user_id=user_id)
+		if players.count() == 1:
+			player = players[0]
 		else:
-			game.turn = 1
-		game.save()
+			errors['player'] = "No player or too many players found"
+
+		entities = Entity.objects.filter(id=building_id,owner_id=user_id,square__row__game_id=game_id)
+		if entities.count() == 1:
+			building = entities[0]
+		else:
+			errors['entity'] = "No entity or too many entities found"
+
+		if not errors:
+			if player.resources > building.level:
+				produced = building.produce_unit(building.level)
+				if produced:
+					player.resources -= building.level
+					player.save()
+			else:
+				errors['resources'] = "Not enough resources to produce from this building"
+		return {"errors":errors}
 
 class Game(models.Model):
 	level = models.PositiveSmallIntegerField()
@@ -78,11 +127,18 @@ class Game(models.Model):
 
 	objects = GameManager()
 
-	def produce_units(self):
-		buildings = self.player_units('Building').order_by('square__row__position')
+	def isOver(self):
+		players = Player.objects.filter(game_id=self.id)
+		for player in players:
+			if player.health <= 0:
+				return True
+		return False
 
-		for building in buildings:
-			building.produce_unit()
+	# def produce_units(self):
+	# 	buildings = self.player_units('Building').order_by('square__row__position')
+
+	# 	for building in buildings:
+	# 		building.produce_unit()
 
 	def move_units(self):
 		if self.turn == 1:
@@ -91,8 +147,7 @@ class Game(models.Model):
 			units = self.player_units('Unit').order_by('square__row__position')
 
 		for unit in units:
-			print("Unit {} {}".format(unit,unit.element.name))
-			unit.move_unit()
+			unit.move_unit(self.turn)
 
 
 	def player_units(self,kind):
@@ -105,7 +160,6 @@ class Game(models.Model):
 
 	def attackEnemy(self):
 		# Get the other player's object (the player whose turn it isn't)
-		print("Attacking enemy!")
 		enemies = Player.objects.filter(game_id=self.id).exclude(player_number=self.turn)
 		if enemies.count() == 1:
 			enemies[0].attack()
@@ -117,6 +171,7 @@ class Player(models.Model):
 	user = models.ForeignKey(User,on_delete=models.PROTECT)
 	player_number = models.PositiveSmallIntegerField()
 	health = models.IntegerField(default=10)
+	resources = models.IntegerField(default=50)
 	created_at = models.DateTimeField(auto_now_add = True)
 	updated_at = models.DateTimeField(auto_now = True)
 
@@ -142,18 +197,20 @@ class EntityManager(models.Manager):
 			errors['user'] = "No user or too many users found"
 
 		squares = Square.objects.filter(row__in=Row.objects.filter(game_id=game_id,position=row),position=column)
-		print ("Row {}, game {}, column {}, squares {}".format(row,game_id,column,squares.count()))
 		if squares.count() == 1:
 			square = squares[0]
 		else:
 			errors['square'] = "No square or too many squares found"
 
 		if not errors:
-			entity = Entity.objects.create(element=Element.objects.get(name=element),level=5,health=5,kind='Building',owner=User.objects.get(id=user_id))
-			print(entity)
-			square.entity = entity
-			print (square)
-			square.save()
+			if player.resources > 5:
+				entity = Entity.objects.create(element=Element.objects.get(name=element),level=1,health=5,kind='Building',owner=User.objects.get(id=user_id))
+				square.entity = entity
+				square.save()
+				player.resources -= 5
+				player.save()
+			else:
+				errors['resources'] = "Not enough resources to build"
 
 		return {"errors":errors, "entity": entity}
 
@@ -203,8 +260,7 @@ class Entity(models.Model):
 		else:
 			return True
 
-	def move_unit(self):
-		player_number = Player.objects.filter(user_id=self.owner_id).values('player_number')[0]['player_number']
+	def move_unit(self,player_number):
 		position = self.square.row.position
 		
 		if player_number == 1:
@@ -228,6 +284,7 @@ class Entity(models.Model):
 			if self.owner != new_squares[0].entity.owner:
 				self.attack(new_squares[0].entity)
 
+		print("New square {}, new row {}, player_number {}".format(new_squares[0],new_position,player_number))
 		# If we survived any attacks, move the unit forward
 		if self.check_unit() and new_squares.count() == 1 and not new_squares[0].entity:
 			new_square = new_squares[0]
@@ -241,7 +298,8 @@ class Entity(models.Model):
 			new_square.entity = self
 			new_square.save()
 
-	def produce_unit(self):
+	def produce_unit(self,building_level):
+		unit = None
 		position = self.square.row.position
 		game_id = self.square.row.game_id
 
@@ -250,16 +308,14 @@ class Entity(models.Model):
 		else:
 			new_position = 7
 
-		print("Producing for building {}".format(self.element.name))
 		new_square = Square.objects.get(row__game_id=game_id,row__position=new_position,position=self.square.position)		
 		if not new_square.entity:
-			print("Producing for building {}, element:{}, owner:{}".format(self,self.element.name,self.owner.name))
-			unit = Entity.objects.create(kind='Unit',element=self.element,owner=self.owner)
+			unit = Entity.objects.create(kind='Unit',element=self.element,owner=self.owner,level=building_level)
 			# Set the contents of the new square
 			new_square.entity = unit
 			new_square.save()
-		else:
-			print("Found entity: {} {}".format(new_square.entity,new_square.entity.element.name))
+
+		return unit
 
 class Row(models.Model):
 	position = models.PositiveSmallIntegerField() # Positions 1-5
