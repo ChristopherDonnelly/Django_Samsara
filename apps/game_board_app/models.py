@@ -86,10 +86,9 @@ class Game(models.Model):
 
 	def move_units(self):
 		if self.turn == 1:
-			# CHANGEME (when mirroring issue is fixed)
-			units = self.player_units('Unit').order_by('square__row__position')
-		else:
 			units = self.player_units('Unit').order_by('-square__row__position')
+		else:
+			units = self.player_units('Unit').order_by('square__row__position')
 
 		for unit in units:
 			print("Unit {} {}".format(unit,unit.element.name))
@@ -208,11 +207,10 @@ class Entity(models.Model):
 		player_number = Player.objects.filter(user_id=self.owner_id).values('player_number')[0]['player_number']
 		position = self.square.row.position
 		
-		# CHANGEME (when board mirroring is fixed)
 		if player_number == 1:
-			new_position = position-1
-		else:
 			new_position = position+1
+		else:
+			new_position = position-1
 
 		# Check to make sure the destination square is empty
 		new_squares = Square.objects.filter(row__game_id=self.square.row.game_id,row__position=new_position,position=self.square.position)		
@@ -247,7 +245,6 @@ class Entity(models.Model):
 		position = self.square.row.position
 		game_id = self.square.row.game_id
 
-		# CHANGEME (when board mirroring is fixed)
 		if position == 1:
 			new_position = 2
 		else:
@@ -280,8 +277,7 @@ class Square(models.Model):
 	updated_at = models.DateTimeField(auto_now = True)
 
 	def inEnemyBaseRow(self,player_number):
-		# CHANGEME when mirroring issue fixed
 		if player_number == 1:
-			return self.row.position == 1
-		else:
 			return self.row.position == 8
+		else:
+			return self.row.position == 1
