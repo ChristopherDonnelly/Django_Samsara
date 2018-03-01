@@ -12,7 +12,7 @@ def index(request):
 	# players_in_game = Players.objects.game
 	all_games = Game.objects.all()
 	
-	print "*******"
+	print ("*******")
 	context = {
 		"all_games": all_games,
 		"user": User.objects.filter(id=request.session['user_session'])[0],
