@@ -5,6 +5,7 @@ from django.utils.html import escape
 from .models import Game, Row, Square, Element, Entity, User, Player
 import json
 from django.http import JsonResponse
+from django.core import serializers
 
 def get_players_info(request):
 
@@ -33,6 +34,57 @@ def get_players_info(request):
 			response['turn'] = user.username
 
 	return JsonResponse(response)
+
+def update_board(request):
+	game_id = request.session['game_id']
+	rows=Row.objects.filter(game_id=game_id).order_by('-position')
+
+	all_rows = [[]] * 8
+
+	row_count = -1
+	square_count = -1
+
+	for row in rows:
+		row_count += 1
+		all_rows[row_count] = []
+
+		for square in Square.objects.filter(row_id=row.id).order_by('position'):
+			entity = Entity.objects.filter(id=square.entity_id)
+
+			if len(entity):
+				entity={
+					'id': square.entity_id,
+					'name': entity[0].element.name,
+					'type': entity[0].kind.lower(),
+					'health': entity[0].health,
+					'image': entity[0].element.name.lower()+'_'+entity[0].kind.lower()
+				}
+			else:
+				entity={
+					'name': '',
+					'type': '',
+					'health': 0,
+					'image': ''
+				}
+
+			# print(square.position)
+			
+			space = {
+				'square': square.position,
+				'entity': entity
+			}
+
+			square_count += 1
+			
+			all_rows[row_count].append(space)
+
+	context = {
+		"game": serializers.serialize('json', Game.objects.filter(id=game_id)),
+		"rows": all_rows,
+		"user": serializers.serialize('json', User.objects.filter(id=request.session['user_session']))
+	}
+
+	return JsonResponse(context)
 
 def get_squares(request):
 	game_id = request.session['game_id']
@@ -126,10 +178,10 @@ def populate_board(request):
 	request.session['player_number'] = 1
 	return redirect('draw_board/{}'.format(game.id))
 
-def update_board(request):
-	if request.method == 'POST':
-		print (request.POST)
-	return redirect('/game_board_app')
+# def update_board(request):
+# 	if request.method == 'POST':
+# 		print (request.POST)
+# 	return redirect('/game_board_app')
 
 def place_building(request):
 	game_id = request.session['game_id']

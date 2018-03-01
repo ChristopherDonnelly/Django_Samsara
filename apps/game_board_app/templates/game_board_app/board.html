@@ -75,37 +75,56 @@
                 return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
             }
 
-            // setInterval(onTimerTick, 33); // 33 milliseconds = ~ 30 frames per sec
-            
-            onTimerTick()
+            function getPlayerInfo(){
+                $.get('/game_board/get_players_info', function(res){
+                    console.log(res)
+                    $('#player1_name').html(res.current_player);
+                    $('#player1_health').html(res.current_player_health);
+                    
+                    $('#player2_name').html(res.opponent);
+                    $('#player2_health').html(res.opponent_health);
+                    
+                    if(res.current_player_turn){
+                        clearInterval(waitTurn);
+                        $('#complete_turn').removeAttr('disabled');
+                        makeDraggables();
+                    }else{
+                        $('#complete_turn').attr('disabled','disabled');
+                        updateBoard();
+                    }
 
-            function onTimerTick() {
-                $.get('/game_board/get_squares', function(res){
-                    $('#board-area').html(res);
+                    updatePlayersTurn(res.turn);
+
+                }, "json");
+            }
+
+            function updateBoard() {
+                $.get('/game_board/update_board', function(res){
+
+                    console.log(res)
+                    
+                    for(var row=0; row<res.rows.length; row++){
+                        for(var square=0; square<res.rows[row].length; square++){
+                            var entity = res.rows[row][square].entity;
+                            if(entity.id){
+                                $('[data-row="'+(row+1)+'"][data-column="'+(square+1)+'"]').html('<img class="entity" id="'+entity.id+'" data-row="'+(row+1)+'" data-column="'+(square+1)+'" src="../../static/game_board_app/images/'+entity.image+'.png" data-name="'+entity.name+'" data-type="'+entity.type+'" data-health="'+entity.health+'" alt="'+entity.name+' '+entity.type+'" >');
+                            }
+                        }
+                    }
+                    
                     findDroppables();
 
-                    $.get('/game_board/get_players_info', function(res){
-                        console.log(res)
-                        $('#player1_name').html(res.current_player);
-                        $('#player1_health').html(res.current_player_health);
-                        
-                        $('#player2_name').html(res.opponent);
-                        $('#player2_health').html(res.opponent_health);
-                        
-                        if(res.current_player_turn){
-                            clearInterval(waitTurn);
-                            $('#complete_turn').removeAttr('disabled');
-                            makeDraggables();
-                        }else{
-                            $('#complete_turn').attr('disabled','disabled');
-                            onTimerTick();
-                        }
-
-                        updatePlayersTurn(res.turn);
-
-                    }, "json");
+                    getPlayerInfo();
                 });
             }
+
+            $.get('/game_board/get_squares', function(res){
+                $('#board-area').html(res);
+
+                updateBoard();
+                findDroppables();
+                getPlayerInfo();
+            });
 
             $(document).on('click', 'button.navbar-btn', function(){
                 clearInterval(waitTurn);
@@ -132,7 +151,7 @@
 
             $(document).on('click', '#complete_turn', function(){
                 $.get('/game_board/complete_turn', function(res){
-                    onTimerTick();
+                    updateBoard();
                 });
             });
 
@@ -159,6 +178,8 @@
             <div class="align-self-end">
                 <div class="row player-hp">
                     <p>Health: <strong id="player1_health">10</strong></p>
+                    <p>Actions: <strong id="player1_ap">100</strong></p>
+                    <p>Resources: <strong id="player1_res">50</strong></p>
                 </div>
                 <div class="row player-box">
                     <div>
@@ -179,19 +200,19 @@
 
             </div>
             <div id="footer">
-                <div id="fire" class="col-2 board-space makeMeDraggable container-fluid">
+                <div id="fire" class="col-2 makeMeDraggable container-fluid">
                     <img src="{% static 'game_board_app/images/fire_building.png' %}" data-type="Building" data-name="Fire" data-health="Blueprint" alt='fire building'  class="entity">
                 </div>
-                <div id="water" class="col-2 board-space makeMeDraggable container-fluid">
+                <div id="water" class="col-2 makeMeDraggable container-fluid">
                     <img src="{% static 'game_board_app/images/water_building.png' %}" data-type="Building" data-name="Water" data-health="Blueprint" alt='water building' class="entity">
                 </div>
-                <div id="wood" class="col-2 board-space makeMeDraggable container-fluid">
+                <div id="wood" class="col-2 makeMeDraggable container-fluid">
                     <img src="{% static 'game_board_app/images/wood_building.png' %}" data-type="Building" data-name="Wood" data-health="Blueprint" alt='wood building'  class="entity">
                 </div>
-                <div id="metal" class="col-2 board-space makeMeDraggable container-fluid">
+                <div id="metal" class="col-2 makeMeDraggable container-fluid">
                     <img src="{% static 'game_board_app/images/metal_building.png' %}" data-type="Building" data-name="Metal" data-health="Blueprint" alt='metal building' class="entity">
                 </div>
-                <div id="earth" class="col-2 board-space makeMeDraggable container-fluid">
+                <div id="earth" class="col-2 makeMeDraggable container-fluid">
                     <img src="{% static 'game_board_app/images/earth_building.png' %}" data-type="Building" data-name="Earth" data-health="Blueprint" alt='earth building' class="entity">
                 </div>
             </div>
@@ -205,6 +226,8 @@
             </div>
             <div class="row player-hp">
                 <p>Health: <strong id="player2_health">10</strong></p>
+                <p>Actions: <strong id="player1_ap">100</strong></p>
+                <p>Resources: <strong id="player1_res">50</strong></p>
             </div>
 
             <div id="button-layer" class="row">

@@ -2,27 +2,12 @@
 {% for row in rows %}
     <div class="row">
         {% for space in row %}
-            <div class="col-2 board-space">
-                {% if space.square.entity_id != None %}
-                    {% if not reverse_order %}
-                        <img class="entity" id="{{space.square.entity_id}}" data-row="{{forloop.parentloop.revcounter}}" data-column="{{forloop.counter}}" src="../../static/game_board_app/images/{{space.entity.image}}.png" data-name="{{space.entity.name}}" data-type="{{space.entity.type}}" data-health="{{space.entity.health}}" alt='{{space.entity.name}} {{space.entity.type}}' >
-                    {% else %}
-                        <img class="entity" id="{{space.square.entity_id}}" data-row="{{forloop.parentloop.counter}}" data-column="{{forloop.revcounter}}" src="../../static/game_board_app/images/{{space.entity.image}}.png" data-name="{{space.entity.name}}" data-type="{{space.entity.type}}" data-health="{{space.entity.health}}" alt='{{space.entity.name}} {{space.entity.type}}' >
-                    {% endif %}
-                    
-                {% else %}
-                    {% if not reverse_order %}
-                        {% if forloop.parentloop.revcounter == 1 %}
-                            <div data-row="{{forloop.parentloop.revcounter}}" data-column="{{forloop.counter}}" class="makeMeDroppable"></div>
-                        {% endif %}
-                    {% else %}
-                        {% if forloop.parentloop.counter == 8 %}
-                            <div data-row="{{forloop.parentloop.counter}}" data-column="{{forloop.revcounter}}" class="makeMeDroppable"></div>
-                        {% endif %}
-                    {% endif %}
-                    
-                {% endif %}
-            </div>
+            {% load random_numbers %}
+            {% if reverse_order %}
+                <div class="col-2 board-space land{% random_int 1 5 %}" data-row="{{forloop.parentloop.revcounter}}" data-column="{{forloop.counter}}" ></div>
+            {% else %}
+                <div class="col-2 board-space land{% random_int 1 5 %}" data-row="{{forloop.parentloop.counter}}" data-column="{{forloop.revcounter}}" ></div>
+            {% endif %}
         {% endfor %}
     </div>
 {% endfor %}
