@@ -81,17 +81,20 @@
                     findDroppables();
 
                     $.get('/game_board/get_players_info', function(res){
+                        console.log(res)
                         $('#player1_name').html(res.current_player);
-                        $('#player1_health').html(res.current_player.health);
+                        $('#player1_health').html(res.current_player_health);
                         
                         $('#player2_name').html(res.opponent);
-                        $('#player2_health').html(res.opponent.health);
+                        $('#player2_health').html(res.opponent_health);
                         
                         if(res.current_player_turn){
                             clearInterval(waitTurn);
+                            $('#complete_turn').removeAttr('disabled');
                             makeDraggables();
                         }else{
-                            waitTurn = setInterval(onTimerTick, 60);
+                            $('#complete_turn').attr('disabled','disabled');
+                            onTimerTick();
                         }
 
                         updatePlayersTurn(res.turn);
@@ -123,7 +126,11 @@
                 $('#header h2').text(playerName+"'s Turn");
             }
 
-            $(document)
+            $(document).on('click', '#complete_turn', function(){
+                $.get('/game_board/complete_turn', function(res){
+                    onTimerTick();
+                });
+            });
 
         });
     </script>
@@ -194,6 +201,14 @@
             </div>
             <div class="row player-hp">
                 <p>Health: <strong id="player2_health">10</strong></p>
+            </div>
+
+            <div id="button-layer" class="row">
+                <div id="button-box">
+                    <button id="complete_turn" type="button" class="btn btn-info end-turn-btn">
+                        End Turn
+                    </button>
+                </div>
             </div>
         </div>
     </div>

@@ -105,3 +105,15 @@ button {
     display: block;
     width: 100%;
 }
+
+#button-layer {
+    border: 1px solid black;
+    height: 10vh;
+    margin-top: 50.6vh;
+    padding: 21px 0px 0px;
+    text-align: center;
+}
+
+#button-box {
+    width: 100%;
+}
