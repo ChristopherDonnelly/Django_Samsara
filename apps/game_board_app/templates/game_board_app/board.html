@@ -77,34 +77,33 @@
 
             function onTimerTick() {
                 $.get('/game_board/get_squares', function(res){
-                    console.log(res)
                     $('#board-area').html(res);
                     findDroppables();
+
+                    $.get('/game_board/get_players_info', function(res){
+                        $('#player1_name').html(res.current_player);
+                        $('#player1_health').html(res.current_player.health);
+                        
+                        $('#player2_name').html(res.opponent);
+                        $('#player2_health').html(res.opponent.health);
+                        
+                        if(res.current_player_turn){
+                            clearInterval(waitTurn);
+                            makeDraggables();
+                        }else{
+                            waitTurn = setInterval(onTimerTick, 60);
+                        }
+
+                        updatePlayersTurn(res.turn);
+
+                    }, "json");
                 });
             }
-            
+
             $(document).on('click', 'button.navbar-btn', function(){
                 clearInterval(waitTurn);
                 window.location = '/lobby';
             });
-
-            $.get('/game_board/get_players_info', function(res){
-                $('#player1_name').html(res.current_player);
-                $('#player1_health').html(res.current_player.health);
-                
-                $('#player2_name').html(res.opponent);
-                $('#player2_health').html(res.opponent.health);
-                
-                if(res.current_player_turn){
-                    clearInterval(waitTurn);
-                    makeDraggables();
-                }else{
-                    waitTurn = setInterval(onTimerTick, 33);
-                }
-
-                updatePlayersTurn(res.turn);
-
-            }, "json");
 
             $(document).on('mouseenter', '.entity', function(){
                 displayInfo($(this));
@@ -123,6 +122,8 @@
             function updatePlayersTurn(playerName){
                 $('#header h2').text(playerName+"'s Turn");
             }
+
+            $(document)
 
         });
     </script>
@@ -146,8 +147,7 @@
 
             <div class="align-self-end">
                 <div class="row player-hp">
-                    <p>Health</p>
-                    <p><strong id="player1_health">10</strong></p>
+                    <p>Health: <strong id="player1_health">10</strong></p>
                 </div>
                 <div class="row player-box">
                     <div>
@@ -193,8 +193,7 @@
                 <p id="player2_name">Player 2</p>
             </div>
             <div class="row player-hp">
-                <p>Health</p>
-                <p><strong id="player2_health">10</strong></p>
+                <p>Health: <strong id="player2_health">10</strong></p>
             </div>
         </div>
     </div>
