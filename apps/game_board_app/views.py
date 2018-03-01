@@ -157,10 +157,7 @@ def attack(request,unit_id,target_id):
 # When the player runs out of activity points
 def complete_turn(request):
 	# Units move one space each
-	Game.objects.move_units(request.session['game_id'])
-
-	# Every building with enough resources will produce a unit
-	Game.objects.produce_units(request.session['game_id'])
+	Game.objects.complete_turn(request.session['game_id'])
 
 	return HttpResponse("Completed turn")
 
