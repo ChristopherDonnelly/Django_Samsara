@@ -37,12 +37,15 @@ def get_players_info(request):
 
 def update_board(request):
 	game_id = request.session['game_id']
-	rows=Row.objects.filter(game_id=game_id).order_by('-position')
+
+	players = Player.objects.filter(game_id=game_id)
 
 	all_rows = [[]] * 8
-
+	
 	row_count = -1
 	square_count = -1
+
+	rows=Row.objects.filter(game_id=game_id).order_by('position')
 
 	for row in rows:
 		row_count += 1
@@ -66,8 +69,6 @@ def update_board(request):
 					'health': 0,
 					'image': ''
 				}
-
-			# print(square.position)
 			
 			space = {
 				'square': square.position,
@@ -79,9 +80,8 @@ def update_board(request):
 			all_rows[row_count].append(space)
 
 	context = {
-		"game": serializers.serialize('json', Game.objects.filter(id=game_id)),
 		"rows": all_rows,
-		"user": serializers.serialize('json', User.objects.filter(id=request.session['user_session']))
+		"player_number": Player.objects.filter(game_id=request.session['game_id'], user_id=request.session['user_session'])[0].player_number
 	}
 
 	return JsonResponse(context)

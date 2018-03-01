@@ -60,10 +60,11 @@
                                 console.log(result)
                                 console.log("Success!")
                                 //$btn.parent().html("<img src={% static 'game_board_app/images/fire_building.png' %} alt='fire building'>")
-                                $.get('/game_board/get_squares', function(res){
-                                    $('#board-area').html(res);
-                                    findDroppables();
-                                });
+                                // $.get('/game_board/get_squares', function(res){
+                                //     $('#board-area').html(res);
+                                //     findDroppables();
+                                // });
+                                updateBoard();
                             }
                         });
                     }
@@ -101,13 +102,15 @@
             function updateBoard() {
                 $.get('/game_board/update_board', function(res){
 
-                    console.log(res)
-                    
                     for(var row=0; row<res.rows.length; row++){
                         for(var square=0; square<res.rows[row].length; square++){
                             var entity = res.rows[row][square].entity;
                             if(entity.id){
                                 $('[data-row="'+(row+1)+'"][data-column="'+(square+1)+'"]').html('<img class="entity" id="'+entity.id+'" data-row="'+(row+1)+'" data-column="'+(square+1)+'" src="../../static/game_board_app/images/'+entity.image+'.png" data-name="'+entity.name+'" data-type="'+entity.type+'" data-health="'+entity.health+'" alt="'+entity.name+' '+entity.type+'" >');
+                            }else if(row+1==res.rows.length && res.player_number){
+                                $('[data-row="'+(row+1)+'"][data-column="'+(square+1)+'"]').html('<div data-row="'+(row+1)+'" data-column="'+(square+1)+'" class="makeMeDroppable"></div>');
+                            }else if(row+1==1 && res.player_number){
+                                $('[data-row="'+(row+1)+'"][data-column="'+(square+1)+'"]').html('<div data-row="'+(row+1)+'" data-column="'+(square+1)+'" class="makeMeDroppable"></div>');
                             }
                         }
                     }

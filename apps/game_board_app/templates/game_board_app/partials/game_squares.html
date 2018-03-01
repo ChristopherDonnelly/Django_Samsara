@@ -4,9 +4,9 @@
         {% for space in row %}
             {% load random_numbers %}
             {% if reverse_order %}
-                <div class="col-2 board-space land{% random_int 1 5 %}" data-row="{{forloop.parentloop.revcounter}}" data-column="{{forloop.counter}}" ></div>
+                <div class="col-2 board-space land{% random_int 1 5 %}" data-row="{{forloop.parentloop.counter }}" data-column="{{forloop.revcounter}}" ></div>
             {% else %}
-                <div class="col-2 board-space land{% random_int 1 5 %}" data-row="{{forloop.parentloop.counter}}" data-column="{{forloop.revcounter}}" ></div>
+                <div class="col-2 board-space land{% random_int 1 5 %}" data-row="{{forloop.parentloop.revcounter }}" data-column="{{forloop.counter }}" ></div>
             {% endif %}
         {% endfor %}
     </div>
