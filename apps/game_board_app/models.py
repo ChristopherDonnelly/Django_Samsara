@@ -118,8 +118,39 @@ class GameManager(models.Manager):
 				if produced:
 					player.resources -= building.level
 					player.save()
+				else: 
+					errors['board'] = "Could not add unit to the board"
 			else:
 				errors['resources'] = "Not enough resources to produce from this building"
+		return {"errors":errors}
+
+	def upgrade_unit(self,game_id,user_id,building_id):
+		game_check = Game.objects.check_game_id(game_id)
+		game = game_check['game']
+		errors = game_check['errors']
+		player = None
+
+		players = Player.objects.filter(game_id=game_id,user_id=user_id)
+		if players.count() == 1:
+			player = players[0]
+		else:
+			errors['player'] = "No player or too many players found"
+
+		entities = Entity.objects.filter(id=building_id,owner_id=user_id,square__row__game_id=game_id)
+		print("Building {}, Owner {}, game id {}".format(building_id,user_id,game_id))
+		if entities.count() == 1:
+			building = entities[0]
+		else:
+			errors['entity'] = "No entity or too many entities found"
+
+		if not errors:
+			if player.resources > building.level:
+				upgraded = building.upgrade_unit()
+				if upgraded:
+					player.resources -= 1
+					player.save()
+			else:
+				errors['resources'] = "Not enough resources to upgrade this building"
 		return {"errors":errors}
 
 class Game(models.Model):
@@ -320,6 +351,11 @@ class Entity(models.Model):
 			new_square.save()
 
 		return unit
+
+	def upgrade_unit(self):
+		self.level += 1
+		self.save()
+		return True
 
 class Row(models.Model):
 	position = models.PositiveSmallIntegerField() # Positions 1-5
