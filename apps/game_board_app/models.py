@@ -237,13 +237,14 @@ class Entity(models.Model):
 								}
 
 		if self.element == target_entity.element:
-			self.health -= 1
-			target_entity.health -= 1
+			self.health -= target_entity.level
+			target_entity.health -= self.level
 		elif target_entity.element.name in entity_relationship[self.element.name]:
-			target_entity.health -= 1
+			target_entity.health -= (self.level+1)
+			self.health -= 1
 			print("Player ({}) beats target ({})".format(self.element.name,target_entity.element.name))
 		else:
-			self.health -= 1
+			self.health -= (target_entity.level+1)
 			print("Player ({}) loses to target ({})".format(self.element.name,target_entity.element.name))
 
 		self.save()
@@ -253,7 +254,7 @@ class Entity(models.Model):
 	objects = EntityManager()
 
 	def check_unit(self):
-		if self.health == 0:
+		if self.health <= 0:
 			# Unit has died; remove it from the board
 			print("Removing unit {}, element:{}, owner:{}".format(self, self.element.name, self.owner.name))
 			square = self.square

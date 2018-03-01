@@ -198,10 +198,13 @@ def place_building(request):
 	if building['errors']:
 		for tag, error in building['errors'].items():
 			messages.error(request, error, extra_tags=tag)
+		success = False
+	else:
+		success = True
 	
 	print(building['errors'])
 
-	return JsonResponse({"success":True})
+	return JsonResponse({'success':success, "errors":building['errors']})
 
 def attack(request,unit_id,target_id):
 	Unit.attack(unit_id,target_id)
@@ -217,7 +220,15 @@ def complete_turn(request):
 
 def produce_unit(request,building_id):
 	produce_validate = Game.objects.produce_unit(request.session['game_id'],request.session['user_session'],building_id)
+
+	if produce_validate['errors']:
+		for tag, error in produce_validate['errors'].items():
+			messages.error(request, error, extra_tags=tag)
+		success = False
+	else:
+		success = True
+
 	print("Produce ", produce_validate['errors'])
 	# Add return value that indicates success or failure, depending on resources
-	return JsonResponse({"success":True})
+	return JsonResponse({'success':success, "errors":produce_validate['errors']})
 
