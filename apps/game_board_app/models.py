@@ -106,6 +106,7 @@ class GameManager(models.Manager):
 			errors['player'] = "No player or too many players found"
 
 		entities = Entity.objects.filter(id=building_id,owner_id=user_id,square__row__game_id=game_id)
+		print("Building {}, Owner {}, game id {}".format(building_id,user_id,game_id))
 		if entities.count() == 1:
 			building = entities[0]
 		else:
