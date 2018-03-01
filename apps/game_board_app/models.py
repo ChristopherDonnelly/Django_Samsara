@@ -20,7 +20,9 @@ class GameManager(models.Manager):
 		if not errors:
 			game = Game.objects.create(level=level)
 			player = Player.objects.create(game=game,user=User.objects.get(id=user_id),player_number=1)
-
+			# Player1 is host of new game
+			game.host.add(player)
+			game.save()
 			# Build the board
 			for row_num in range(1,rows+1):
 				row = Row.objects.create(position=row_num,game=game)
@@ -114,6 +116,7 @@ class Game(models.Model):
 
 class Player(models.Model):
 	game = models.ForeignKey(Game, related_name="players",on_delete=models.PROTECT)
+	hosted_games = models.ForeignKey(Game, related_name="host", null=True, on_delete=models.SET_NULL)
 	user = models.ForeignKey(User,on_delete=models.PROTECT)
 	player_number = models.PositiveSmallIntegerField()
 	health = models.IntegerField(default=10)
