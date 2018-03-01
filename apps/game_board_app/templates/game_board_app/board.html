@@ -60,6 +60,10 @@
                                 console.log(result)
                                 console.log("Success!")
                                 //$btn.parent().html("<img src={% static 'game_board_app/images/fire_building.png' %} alt='fire building'>")
+                                $.get('/game_board/get_squares', function(res){
+                                    $('#board-area').html(res);
+                                    findDroppables();
+                                });
                             }
                         });
                     }
