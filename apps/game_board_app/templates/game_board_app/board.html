@@ -81,7 +81,10 @@
                 gameLoop(res);
                 gameId = res.game_id;
 
-                if(res.opponent!="Waiting") opponentJoined=true;
+                if(res.opponent!="Waiting"){
+                    if($("#waiting_room")) $("#waiting_room").dialog( "close" );
+                    opponentJoined=true;
+                }
                 else opponentJoined=false;
 
             }, "json");
@@ -188,7 +191,7 @@
                                     updateBoard();
                                 }else{
                                     console.log(res.errors)
-                                    if(!gameOver){
+                                    if(!gameOver&&res.errors.game_over){
                                         gameOver = true;
 
                                         $("#game_over p").html('<p>'+res.errors.game_over+'</p><p>Player '+res.winner+' is the winner!</p>');
