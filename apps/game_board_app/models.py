@@ -157,6 +157,7 @@ class GameManager(models.Manager):
 		game_check = Game.objects.check_game_id(game_id)
 		game = game_check['game']
 		errors = game_check['errors']
+		result = None
 
 		entities = Entity.objects.filter(id=unit_id,square__row__game_id=game_id)
 		if entities.count() == 1:
