@@ -88,12 +88,15 @@ h2{
     }
 }
 
-@media only screen and (min-width: 1300px){
+@media only screen and (min-width: 1520px){
     table{
-        width: 600px;
+        width: 100%;
     }
     .your_games, .other_games{
         display: inline-block;
+    }
+    .other_games{
+        margin-left: 20px;
     }
 }
 
