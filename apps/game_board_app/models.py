@@ -18,8 +18,8 @@ class GameManager(models.Manager):
 			errors['user'] = "No user or too many users found"
 
 		if not errors:
-			game = Game.objects.create(level=level)
-			player = Player.objects.create(game=game,user=User.objects.get(id=user_id),player_number=1)
+			game = Game.objects.create(level=level,turn=1)
+			player = Player.objects.create(game=game,user=User.objects.get(id=user_id),player_number=1,health=10,resources=50)
 			# Player1 is host of new game
 			game.host.add(player)
 			game.save()
@@ -57,7 +57,7 @@ class GameManager(models.Manager):
 				errors['user'] = "No user or too many users found"
 
 			if not errors:
-				player = Player.objects.create(game=game,user=User.objects.get(id=user_id),player_number=2)
+				player = Player.objects.create(game=game,user=User.objects.get(id=user_id),player_number=2,health=10,resources=50)
 
 		return {"errors": errors}
 
@@ -155,7 +155,7 @@ class GameManager(models.Manager):
 
 class Game(models.Model):
 	level = models.PositiveSmallIntegerField()
-	turn = models.PositiveSmallIntegerField(default=1) # Keeps track of whose turn it is
+	turn = models.PositiveSmallIntegerField() # Keeps track of whose turn it is
 	created_at = models.DateTimeField(auto_now_add = True)
 	updated_at = models.DateTimeField(auto_now = True)
 
@@ -205,8 +205,8 @@ class Player(models.Model):
 	hosted_games = models.ForeignKey(Game, related_name="host", null=True, on_delete=models.SET_NULL)
 	user = models.ForeignKey(User,on_delete=models.PROTECT)
 	player_number = models.PositiveSmallIntegerField()
-	health = models.IntegerField(default=10)
-	resources = models.IntegerField(default=50)
+	health = models.IntegerField()
+	resources = models.IntegerField()
 	created_at = models.DateTimeField(auto_now_add = True)
 	updated_at = models.DateTimeField(auto_now = True)
 
@@ -251,10 +251,10 @@ class EntityManager(models.Manager):
 
 # insert into game_board_app_entity (element_id,level,owner_id,created_at,updated_at,kind) values (1,1,1,'2/24/2018','2/24/2018','Building')
 class Entity(models.Model):
-	kind = models.CharField(max_length=50,default="Building")
+	kind = models.CharField(max_length=50)
 	element = models.ForeignKey(Element, related_name="entity",on_delete=models.PROTECT)
-	level = models.PositiveSmallIntegerField(default=1)
-	health = models.PositiveSmallIntegerField(default=1)
+	level = models.PositiveSmallIntegerField()
+	health = models.PositiveSmallIntegerField()
 	owner = models.ForeignKey(User, related_name="entity",on_delete=models.PROTECT)
 	created_at = models.DateTimeField(auto_now_add = True)
 	updated_at = models.DateTimeField(auto_now = True)
@@ -345,7 +345,7 @@ class Entity(models.Model):
 
 		new_square = Square.objects.get(row__game_id=game_id,row__position=new_position,position=self.square.position)		
 		if not new_square.entity:
-			unit = Entity.objects.create(kind='Unit',element=self.element,owner=self.owner,level=building_level)
+			unit = Entity.objects.create(kind='Unit',element=self.element,owner=self.owner,level=building_level,health=1)
 			# Set the contents of the new square
 			new_square.entity = unit
 			new_square.save()
