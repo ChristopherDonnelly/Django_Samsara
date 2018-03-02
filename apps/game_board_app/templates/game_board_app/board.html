@@ -205,7 +205,7 @@
                                                 text: "Return to Lobby",
                                                 click: function() {
                                                     console.log('Player = '+$(this).attr('data-player'))
-                                                    $.get('/delete_game/'+gameId, function(){
+                                                    $.get('/lobby/delete_game/'+gameId, function(){
                                                         window.location = '/lobby'; 
                                                     });                                 
                                                 }
