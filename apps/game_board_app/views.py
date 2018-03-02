@@ -13,11 +13,17 @@ def get_players_info(request):
 
 	players = Player.objects.filter(game_id=request.session['game_id'])
 
+	response['opponent'] = 'Waiting'
+	response['opponent_health'] = 0
+	response['opponent_resources'] = 0
+	response['opponent_turn'] = False
+
 	for player in players:
 		user = User.objects.get(id=player.user_id)
 		if user.id == request.session['user_session']:
 			response['current_player'] = user.username
 			response['current_player_health'] = player.health
+			response['current_player_resources'] = player.resources
 			if player.game.turn == player.player_number:
 				response['current_player_turn'] = True
 			else:
@@ -25,6 +31,7 @@ def get_players_info(request):
 		else:
 			response['opponent'] = user.username
 			response['opponent_health'] = player.health
+			response['opponent_resources'] = player.resources
 			if player.game.turn == player.player_number:
 				response['opponent_turn'] = True
 			else:
@@ -58,6 +65,7 @@ def update_board(request):
 					'name': entityQuery[0].element.name,
 					'type': entityQuery[0].kind.lower(),
 					'health': entityQuery[0].health,
+					'level': entityQuery[0].level,
 					'image': entityQuery[0].element.name.lower()+'_'+entityQuery[0].kind.lower()
 				}
 			else:
@@ -65,6 +73,7 @@ def update_board(request):
 					'name': '',
 					'type': '',
 					'health': 0,
+					'level': 0,
 					'image': ''
 				}
 			
@@ -141,6 +150,7 @@ def get_squares(request):
 					'name': entity[0].element.name,
 					'type': entity[0].kind.lower(),
 					'health': entity[0].health,
+					'level': entity[0].level,
 					'image': entity[0].element.name.lower()+'_'+entity[0].kind.lower()
 				}
 			else:
@@ -148,6 +158,7 @@ def get_squares(request):
 					'name': '',
 					'type': '',
 					'health': 0,
+					'level': 0,
 					'image': ''
 				}
 

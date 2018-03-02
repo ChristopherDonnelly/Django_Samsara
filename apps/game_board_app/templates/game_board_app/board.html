@@ -22,17 +22,22 @@
 
     <script>
 
+        var timeCheck;
+        var documentReady = false;
+        var waitingRoom = null;
+        var opponentJoined = false;
+
+        function csrfSafeMethod(method) {
+            // these HTTP methods do not require CSRF protection
+            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+        }
+
         function makeDraggables(){
             $('.makeMeDraggable').draggable({
                 stack: $('.makeMeDraggable'),
                 containment: $('body'),
                 helper: "clone"
             });
-        }
-
-        function csrfSafeMethod(method) {
-            // these HTTP methods do not require CSRF protection
-            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
         }
 
         function findDroppables(){
@@ -71,8 +76,14 @@
             $.get('/game_board/get_players_info', function(res){
                 
                 updatePlayer(res);
-
-                $('#complete_turn').removeAttr('disabled');
+                
+                
+                gameLoop(res);
+                // console.log(res.opponent!="Waiting")
+                // $('#complete_turn').removeAttr('disabled');
+                
+                if(res.opponent!="Waiting") opponentJoined=true;
+                else opponentJoined=false;
 
             }, "json");
         }
@@ -81,35 +92,130 @@
 
             $('#player1_name').html(res.current_player);
             $('#player1_health').html(res.current_player_health);
+            $('#player1_resources').html(res.current_player_resources);
             
             $('#player2_name').html(res.opponent);
             $('#player2_health').html(res.opponent_health);
+            $('#player2_resources').html(res.opponent_resources);
             
-            updateBoard();
+            // updateBoard();
         }
 
         function applyBuildingActions(){
             $('.building_actions').qtip({
-                 // Grab some elements to apply the tooltip to
                 content: {
-                    text: 'My common piece of text here'
+                    text: function(event, api) {
+                        // Retrieve content from custom attribute of the $('.selector') elements.
+                        return $(this).next('.actions').clone();
+                    },
+                    prerender: true,
+                    title: 'Building Actions:'
+                },
+                position: {
+                    my: 'bottom center',
+                    at: 'top center',
+                    adjust: {
+                        y: 25
+                    }
+                },
+                show: {
+                    event: 'mousedown',
+                    solo: true,
+					effect: function() {
+                        $(this).show('puff', { percent:1 }, 500);
+                    }
+                },
+                events: {
+                    show: function(event, api) {
+                        // Only show the tooltip if it was a right-click
+                        if(event.originalEvent.button !== 2) {
+                            event.preventDefault();
+                        }
+                    }
+                },
+                style: {
+                    classes: 'qtip-shadow qtip-bootstrap'
+                },
+                hide: {
+                    fixed: true,
+                    delay: 1500,
+					effect: function() {
+                        $(this).hide('fade', { direction: "right" }, 500);
+                    }
+                }
+            });
+
+            $('.entity:not(.building_actions)').qtip({
+                content: {
+                    text: function(event, api) {
+                        // Retrieve content from custom attribute of the $('.selector') elements.
+                        //alert($(this).parent().find('.info').html())
+                        return $(this).parent().find('.info').clone();
+                    },
+                    prerender: true,
+                    title: 'Info:'
+                },
+                position: {
+                    at: 'center',
+                    my: 'center'
+                },
+                show: {
+                    solo: true,
+					effect: function() {
+                        $(this).show('puff', { percent:1 }, 500);
+                    }
+                },
+                style: {
+                    classes: 'qtip-shadow qtip-bootstrap'
+                },
+                hide: {
+                    fixed: true,
+                    delay: 500,
+					effect: function() {
+                        $(this).hide('fade', { direction: "right" }, 500);
+                    }
                 }
             });
         }
 
+        function gameLoop(players){
+            if(players.current_player_number == 1){
+                if(($.now()-timeCheck) >= 20000){
+                    timeCheck = $.now();
+                    $('.unit').each(function(i){
+                        console.log($(this).attr('id'))
+                        //move_unit();
+                        $.get('/game_board/move_unit/'+$(this).attr('id'), function(res){
+                            updateBoard();
+                        });
+                    });
+                }else{
+                    updateBoard();
+                }
+            }else{
+                updateBoard();
+            }
+            //gameLoop();
+        }
+
         function updateBoard() {
+            
             $.get('/game_board/update_board', function(res){
         
                 var players = res.player;
-
-                updatePlayer(res.player)
+                
+                updatePlayer(players)
 
                 for(var row=0; row<res.rows.length; row++){
                     for(var square=0; square<res.rows[row].length; square++){
                         var entity = res.rows[row][square].entity;
                         if(entity.id){
                             if(!$('img[data-row="'+(row+1)+'"][data-column="'+(square+1)+'"]').length){
-                                $('[data-row="'+(row+1)+'"][data-column="'+(square+1)+'"]').html('<img class="entity" id="'+entity.id+'" data-row="'+(row+1)+'" data-column="'+(square+1)+'" src="../../static/game_board_app/images/'+entity.image+'.png" data-name="'+entity.name+'" data-type="'+entity.type+'" data-health="'+entity.health+'" alt="'+entity.name+' '+entity.type+'" >');
+                                var actions = '<div class="actions"><a href="#" data-path="/game_board/produce_unit/'+entity.id+'">Produce Unit: Cost '+entity.level+'</a><a href="#" data-path="/game_board/upgrade_unit/'+entity.id+'">Upgrade Building: Cost 1</a></div>';
+
+                                var info = '<div class="info"><p class="text-capitalize"><strong>'+entity.type+'</strong></p><p class="text-capitalize"><strong>Type:</strong> '+entity.name+'</p><p><strong>Health:</strong> '+entity.health+'</p><p><strong>Level:</strong> '+entity.level+'</p></div>';
+
+                                $('[data-row="'+(row+1)+'"][data-column="'+(square+1)+'"]').html('<img class="entity '+entity.type+'" id="'+entity.id+'" data-row="'+(row+1)+'" data-column="'+(square+1)+'" src="../../static/game_board_app/images/'+entity.image+'.png" data-name="'+entity.name+'" data-type="'+entity.type+'" data-health="'+entity.health+'" alt="'+entity.name+' '+entity.type+'">'+actions+info);
 
                                 if(entity.type == 'building' && row+1==res.rows.length && players.current_player_number == 2 || row+1==1 && players.current_player_number == 1)
                                     $('img[data-row="'+(row+1)+'"][data-column="'+(square+1)+'"]').addClass('building_actions');
@@ -125,48 +231,91 @@
                 }
                 
                 findDroppables();
-                getPlayerInfo();
+                gameLoop(players);
             });
         }
 
-        function displayInfo($entity){
-            var entity='<p><strong>'+$entity.attr('data-type')+'</strong></p>';
-            var type='<p><strong>Type:</strong> '+$entity.attr('data-name')+'</p>';
-            var health='<p><strong>Health:</strong> '+$entity.attr('data-health')+'</p>';
-            var info=entity+type+health;
-            $('#info-box').html(info);
-        }
-
-        $(document).ready(function(){
-
+        function initializeGame(){
+            timeCheck = $.now();
+            
             makeDraggables();
 
-            $.get('/game_board/get_squares', function(res){
-                $('#board-area').html(res);
-
-                updateBoard();
+            $(document).on( 'click', '.actions>a', function(){
+                
+                $('.qtip').hide();
+                
+                // Determine Action taken on Building (Spwan Unit/Upgrade Building)
+                $.get($(this).attr('data-path'), function(res){
+                    updateBoard();
+                });
+                return false;
             });
-
+            
+            // Return to Lobby button
             $(document).on('click', 'button.navbar-btn', function(){
                 window.location = '/lobby';
             });
 
-            $(document).on('mouseenter', '.entity', function(){
-                displayInfo($(this));
-            }).on('mouseleave', '.entity', function(){
-                $('#info-box').html('');
+            // Turn off Right-Click context menu
+            $(document).contextmenu(function() {
+                return false;
             });
+        }
 
-            $(document).on('click', '#complete_turn', function(){
-                $.get('/game_board/complete_turn', function(res){
-                    updateBoard();
-                });
-            });
+        function playerWaitingRoom(){
+            console.log(opponentJoined)
+            if(!opponentJoined){
+                getPlayerInfo()
+                if(!documentReady){
+                    documentReady=true;
+                    // Load initial game board on entry
+                    $.get('/game_board/get_squares', function(res){
+                        $('#board-area').html(res);
 
+                        console.log('Load game board while waiting for opponent')
+                        
+                        updateBoard();
+
+                        $( "#dialog" ).dialog({
+                            modal: true,
+                            classes: {
+                                "ui-dialog": "ui-corner-all"
+                            },
+                            buttons: [
+                                {
+                                text: "Return to Lobby",
+                                icon: "ui-icon-heart",
+                                click: function() {
+                                    clearInterval(waitingRoom);
+                                    window.location = '/lobby';                                    
+                                }
+                            
+                                // Uncommenting the following line would hide the text,
+                                // resulting in the label being used as a tooltip
+                                //showText: false
+                                }
+                            ]
+                        });
+                    });
+                }
+            }else{
+                clearInterval(waitingRoom);
+                $( "#dialog" ).dialog( "close" );
+                initializeGame();
+            }
+        }
+
+        $(document).ready(function(){
+
+            waitingRoom = setInterval(playerWaitingRoom, 500);
+            
         });
     </script>
 </head>
 <body>
+    <div id="dialog" title="Waiting on Opponent">
+        <p>Waiting for Opponent to join!</p>
+    </div>
     <div id="wrapper">
 
         <div id="left-column" class="container-fluid">
@@ -178,9 +327,8 @@
 
             <div class="align-self-end">
                 <div class="row player-hp">
-                    <p>Health: <strong id="player1_health">10</strong></p>
-                    <p>Actions: <strong id="player1_ap">100</strong></p>
-                    <p>Resources: <strong id="player1_res">50</strong></p>
+                    <p>Health: <strong id="player1_health"></strong></p>
+                    <p>Resources: <strong id="player1_resources"></strong></p>
                 </div>
                 <div class="row player-box">
                     <div>
@@ -190,11 +338,11 @@
                 </div>
             </div>
 
-            <div id="info-layer" class="row">
+            <!-- <div id="info-layer" class="row">
                 <div id="info-box">
                     
                 </div>
-            </div>
+            </div> -->
         </div>
         <div id="middle-column" class="container-fluid">
             <div id="board-area">
@@ -202,19 +350,49 @@
             </div>
             <div id="footer">
                 <div id="fire" class="col-2 makeMeDraggable container-fluid">
-                    <img src="{% static 'game_board_app/images/fire_building.png' %}" data-type="Building" data-name="Fire" data-health="Blueprint" alt='fire building'  class="entity">
+                    <img src="{% static 'game_board_app/images/fire_building.png' %}" data-level="0" data-type="Building" data-name="Fire" data-health="Blueprint" alt='fire building' class="blueprint">
+                    <div class="info">
+                        <p><strong>Building</strong></p>
+                        <p><strong>Type:</strong> Fire</p>
+                        <p><strong>Health:</strong> Blueprint</p>
+                        <p><strong>Level:</strong> 0</p>
+                    </div>
                 </div>
                 <div id="water" class="col-2 makeMeDraggable container-fluid">
-                    <img src="{% static 'game_board_app/images/water_building.png' %}" data-type="Building" data-name="Water" data-health="Blueprint" alt='water building' class="entity">
+                    <img src="{% static 'game_board_app/images/water_building.png' %}" data-level="0" data-type="Building" data-name="Water" data-health="Blueprint" alt='water building' class="blueprint">
+                    <div class="info">
+                        <p><strong>Building</strong></p>
+                        <p><strong>Type:</strong> Water</p>
+                        <p><strong>Health:</strong> Blueprint</p>
+                        <p><strong>Level:</strong> 0</p>
+                    </div>
                 </div>
                 <div id="wood" class="col-2 makeMeDraggable container-fluid">
-                    <img src="{% static 'game_board_app/images/wood_building.png' %}" data-type="Building" data-name="Wood" data-health="Blueprint" alt='wood building'  class="entity">
+                    <img src="{% static 'game_board_app/images/wood_building.png' %}" data-level="0" data-type="Building" data-name="Wood" data-health="Blueprint" alt='wood building' class="blueprint">
+                    <div class="info">
+                        <p><strong>Building</strong></p>
+                        <p><strong>Type:</strong> Wood</p>
+                        <p><strong>Health:</strong> Blueprint</p>
+                        <p><strong>Level:</strong> 0</p>
+                    </div>
                 </div>
                 <div id="metal" class="col-2 makeMeDraggable container-fluid">
-                    <img src="{% static 'game_board_app/images/metal_building.png' %}" data-type="Building" data-name="Metal" data-health="Blueprint" alt='metal building' class="entity">
+                    <img src="{% static 'game_board_app/images/metal_building.png' %}" data-level="0" data-type="Building" data-name="Metal" data-health="Blueprint" alt='metal building' class="blueprint">
+                    <div class="info">
+                        <p><strong>Building</strong></p>
+                        <p><strong>Type:</strong> Metal</p>
+                        <p><strong>Health:</strong> Blueprint</p>
+                        <p><strong>Level:</strong> 0</p>
+                    </div>
                 </div>
                 <div id="earth" class="col-2 makeMeDraggable container-fluid">
-                    <img src="{% static 'game_board_app/images/earth_building.png' %}" data-type="Building" data-name="Earth" data-health="Blueprint" alt='earth building' class="entity">
+                    <img src="{% static 'game_board_app/images/earth_building.png' %}" data-level="0" data-type="Building" data-name="Earth" data-health="Blueprint" alt='earth building' class="blueprint">
+                    <div class="info">
+                        <p><strong>Building</strong></p>
+                        <p><strong>Type:</strong> Earth</p>
+                        <p><strong>Health:</strong> Blueprint</p>
+                        <p><strong>Level:</strong> 0</p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -226,17 +404,8 @@
                 <p id="player2_name">Player 2</p>
             </div>
             <div class="row player-hp">
-                <p>Health: <strong id="player2_health">10</strong></p>
-                <p>Actions: <strong id="player1_ap">100</strong></p>
-                <p>Resources: <strong id="player1_res">50</strong></p>
-            </div>
-
-            <div id="button-layer" class="row">
-                <div id="button-box">
-                    <button id="complete_turn" type="button" class="btn btn-info end-turn-btn">
-                        End Turn
-                    </button>
-                </div>
+                <p>Health: <strong id="player2_health"></strong></p>
+                <p>Resources: <strong id="player2_resources"></strong></p>
             </div>
         </div>
     </div>

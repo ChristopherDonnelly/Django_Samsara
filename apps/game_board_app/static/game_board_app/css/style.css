@@ -47,7 +47,7 @@ button {
 }
 .player-hp p {
     width: 100%;
-    padding-top: 0px;
+    padding-top: 10px;
     padding-bottom: 0px;
     margin: 0px;
 }
@@ -77,9 +77,11 @@ button {
     margin-left: -15px;
     text-align: center;
     height: 10vh;
+    box-shadow: 3px 3px 3px darkgray;
 }
 #board-area {
     height: 80vh;
+    box-shadow: 18px 3px 3px darkgray;
 }
 .makeMeDraggable { 
     cursor: pointer;
@@ -149,4 +151,35 @@ button {
 
 .btn-info {
     box-shadow: 3px 3px 3px darkgrey;
+}
+
+.actions, .info {
+    display: none;
+    overflow: hidden;
+}
+
+.actions a {
+    display: block;
+    white-space: nowrap;
+}
+
+.qtip-bootstrap .qtip-titlebar {
+    padding: 4px 14px;
+}
+
+.info p {
+    padding: 0px 10px;
+    margin: 0px;
+    white-space: nowrap;
+}
+
+.qtip-bootstrap .qtip-content {
+    padding: 5px 10px;
+}
+
+#dialog {
+    display: none;
+}
+.ui-dialog-titlebar-close {
+    display: none;
 }
