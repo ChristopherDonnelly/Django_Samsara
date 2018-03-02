@@ -266,7 +266,7 @@ def produce_unit(request,building_id):
 
 	print("Produce ", validate['errors'])
 	# Add return value that indicates success or failure, depending on resources
-	return JsonResponse({'success':success, "errors":validate['errors']})
+	return JsonResponse({'success':success, "errors":validate['errors'],  "winner":validate['winner']})
 
 def upgrade_unit(request,building_id):
 	validate = Game.objects.upgrade_unit(request.session['game_id'],request.session['user_session'],building_id)
@@ -280,7 +280,7 @@ def upgrade_unit(request,building_id):
 
 	print("Upgrade ", validate['errors'])
 	# Add return value that indicates success or failure, depending on resources
-	return JsonResponse({'success':success, "errors":validate['errors']})
+	return JsonResponse({'success':success, "errors":validate['errors'], "winner":validate['winner']})
 
 def move_unit(request,unit_id):
 	validate = Game.objects.move_unit(request.session['game_id'],unit_id)
@@ -292,6 +292,6 @@ def move_unit(request,unit_id):
 	else:
 		success = True
 
-	print("Move ", validate['errors'])
+	print("Move ", validate['errors'], validate['winner'])
 	# Add return value that indicates success or failure, depending on resources
-	return JsonResponse({'success':success, "errors":validate['errors'], "result":validate['result']})
+	return JsonResponse({'success':success, "errors":validate['errors'], "result":validate['result'], "winner":validate['winner']})
