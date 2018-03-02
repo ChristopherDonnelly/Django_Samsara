@@ -67,16 +67,12 @@ h2{
     margin: 20px 0px 10px 30px;
 } 
 
+
 /* tr:nth-of-type(odd){
     background: seashell;
 } */
 
-@media only screen and (min-width: 1024px){
-    table{
-        margin-bottom: 70px;
-        width: 1024px;
-    }
-}
+
 
 @media only screen and (min-width: 481px){
     th, td{
@@ -92,11 +88,25 @@ h2{
     }
 }
 
+@media only screen and (min-width: 1300px){
+    table{
+        width: 600px;
+    }
+    .your_games, .other_games{
+        display: inline-block;
+    }
+}
 
+
+/* center your games & othergames
+display: inline-block; */ 
 @media only screen and (max-width: 480px){
     /* force table to not be like a table anymore */
     table, thead, tbody, th, td, tr{
         display: block;
+    }
+    table{
+        margin: 0px 16px 0px 0px;
     }
 
     /* hide table headers, but not display: none, for accessibility */

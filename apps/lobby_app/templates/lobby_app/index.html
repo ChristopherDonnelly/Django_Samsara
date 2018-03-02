@@ -35,9 +35,10 @@
 					{% csrf_token %}
 					<input type="submit" name="submit" value="Reload" id="reload">
 				</form>
+				<hr>
 				<!-- currently logged in user's games -->
 				<div class="your_games">
-					<h2>Your Games</h2>
+					<h2>Your Games</h2><br>
 					<table>
 						<thead>
 							<th class="col-odd">Game</th>
@@ -69,7 +70,7 @@
 				</div>
 				<!-- other players' games -->
 				<div class="other_games">
-					<h2>Other Games</h2>
+					<h2>Other Games</h2><br>
 					<table>
 						<thead>
 							<th class="col-odd">Game</th>
