@@ -95,6 +95,7 @@ def update_board(request):
 			response['current_player_username'] = user.username
 			response['current_player_health'] = player.health
 			response['current_player_number'] = player.player_number
+			response['current_player_resources'] = player.resources
 			if player.game.turn == player.player_number:
 				response['current_player_turn'] = True
 			else:
@@ -103,6 +104,7 @@ def update_board(request):
 			response['opponent_username'] = user.username
 			response['opponent_health'] = player.health
 			response['opponent_number'] = player.player_number
+			response['opponent_resources'] = player.resources
 			if player.game.turn == player.player_number:
 				response['opponent_turn'] = True
 			else:

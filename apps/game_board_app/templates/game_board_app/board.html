@@ -77,7 +77,6 @@
                 
                 updatePlayer(res);
                 
-                
                 gameLoop(res);
                 // console.log(res.opponent!="Waiting")
                 // $('#complete_turn').removeAttr('disabled');
@@ -180,7 +179,7 @@
 
         function gameLoop(players){
             if(players.current_player_number == 1){
-                if(($.now()-timeCheck) >= 20000){
+                if(($.now()-timeCheck) >= 2500){
                     timeCheck = $.now();
                     $('.unit').each(function(i){
                         console.log($(this).attr('id'))
