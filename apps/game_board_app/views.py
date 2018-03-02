@@ -38,8 +38,6 @@ def get_players_info(request):
 def update_board(request):
 	game_id = request.session['game_id']
 
-	players = Player.objects.filter(game_id=game_id)
-
 	all_rows = [[]] * 8
 	
 	row_count = -1
@@ -52,15 +50,15 @@ def update_board(request):
 		all_rows[row_count] = []
 
 		for square in Square.objects.filter(row_id=row.id).order_by('position'):
-			entity = Entity.objects.filter(id=square.entity_id)
+			entityQuery = Entity.objects.filter(id=square.entity_id)
 
-			if len(entity):
+			if len(entityQuery):
 				entity={
 					'id': square.entity_id,
-					'name': entity[0].element.name,
-					'type': entity[0].kind.lower(),
-					'health': entity[0].health,
-					'image': entity[0].element.name.lower()+'_'+entity[0].kind.lower()
+					'name': entityQuery[0].element.name,
+					'type': entityQuery[0].kind.lower(),
+					'health': entityQuery[0].health,
+					'image': entityQuery[0].element.name.lower()+'_'+entityQuery[0].kind.lower()
 				}
 			else:
 				entity={
@@ -79,9 +77,34 @@ def update_board(request):
 			
 			all_rows[row_count].append(space)
 
+	players = Player.objects.filter(game_id=request.session['game_id'])
+	response = {}
+
+	for player in players:
+		user = User.objects.get(id=player.user_id)
+		if user.id == request.session['user_session']:
+			response['current_player_username'] = user.username
+			response['current_player_health'] = player.health
+			response['current_player_number'] = player.player_number
+			if player.game.turn == player.player_number:
+				response['current_player_turn'] = True
+			else:
+				response['current_player_turn'] = False
+		else:
+			response['opponent_username'] = user.username
+			response['opponent_health'] = player.health
+			response['opponent_number'] = player.player_number
+			if player.game.turn == player.player_number:
+				response['opponent_turn'] = True
+			else:
+				response['opponent_turn'] = False
+		
+		if player.game.turn == player.player_number:
+			response['turn'] = user.username
+
 	context = {
 		"rows": all_rows,
-		"player_number": Player.objects.filter(game_id=request.session['game_id'], user_id=request.session['user_session'])[0].player_number
+		"player": response
 	}
 
 	return JsonResponse(context)

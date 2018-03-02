@@ -10,6 +10,7 @@
         <link rel="stylesheet" href="{% static 'game_board_app/css/normalize.css' %}" media="screen" title="no title"  charset="utf-8">
         <link rel="stylesheet" href="{% static 'game_board_app/css/bootstrap.min.css' %}" media="screen" title="no title"  charset="utf-8">
         <link rel="stylesheet" href="{% static 'game_board_app/css/jquery-ui.min.css' %}" media="screen" title="no title"  charset="utf-8">
+        <link rel="stylesheet" href="{% static 'game_board_app/css/jquery.qtip.css' %}" media="screen" title="no title"  charset="utf-8">
         <link rel="stylesheet" href="{% static 'game_board_app/css/style.css' %}" media="screen" title="no title"  charset="utf-8">
 
         <script src="{% static 'game_board_app/js/jquery-3.3.1.min.js' %}"></script>
@@ -17,120 +18,136 @@
         <script src="{% static 'game_board_app/js/utils.js' %}"></script>
         <script src="{% static 'game_board_app/js/tether.min.js' %}"></script>
         <script src="{% static 'game_board_app/js/bootstrap.min.js' %}"></script>
+        <script src="{% static 'game_board_app/js/jquery.qtip.min.js' %}"></script>
 
     <script>
-        $(document).ready(function(){
-            
-            waitTurn = null;
 
-            function makeDraggables(){
-                console.log('make me draggable')
-                $('.makeMeDraggable').draggable({
-                    stack: $('.makeMeDraggable'),
-                    containment: $('body'),
-                    helper: "clone"
-                });
-            }
+        function makeDraggables(){
+            $('.makeMeDraggable').draggable({
+                stack: $('.makeMeDraggable'),
+                containment: $('body'),
+                helper: "clone"
+            });
+        }
 
-            function findDroppables(){
-                $(".makeMeDroppable").droppable({
-                    drop: function (event, ui) {
-                        var $div=$(this);
-                        var draggable = ui.draggable;
-                        draggable = draggable.clone();
-                        draggable.removeClass('col-2 makeMeDraggable').appendTo(this);
+        function csrfSafeMethod(method) {
+            // these HTTP methods do not require CSRF protection
+            return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+        }
 
-                        var params = { column: $div.attr('data-column'), row: $div.attr('data-row'), element: draggable.attr('id') }
-                        
-                        $.ajaxSetup({
-                            beforeSend: function(xhr, settings) {
-                                if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
-                                    xhr.setRequestHeader("X-CSRFToken", '{{ csrf_token }}');
-                                }
-                            }
-                        });
-                        
-                        $.ajax( { type: "POST",
-                            url: '/game_board/place_building',
-                            dataType: "json",
-                            data: JSON.stringify(params),
-                            contentType: "application/json; charset=utf-8",
-                            traditional: true,
-                            success: function(result) {
-                                console.log(result)
-                                console.log("Success!")
-                                //$btn.parent().html("<img src={% static 'game_board_app/images/fire_building.png' %} alt='fire building'>")
-                                // $.get('/game_board/get_squares', function(res){
-                                //     $('#board-area').html(res);
-                                //     findDroppables();
-                                // });
-                                updateBoard();
-                            }
-                        });
-                    }
-                });
-            }
+        function findDroppables(){
+            $(".makeMeDroppable").droppable({
+                drop: function (event, ui) {
+                    var $div=$(this);
+                    var draggable = ui.draggable;
+                    draggable = draggable.clone();
+                    draggable.removeClass('col-2 makeMeDraggable').appendTo(this);
 
-            function csrfSafeMethod(method) {
-                // these HTTP methods do not require CSRF protection
-                return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
-            }
-
-            function getPlayerInfo(){
-                $.get('/game_board/get_players_info', function(res){
-                    console.log(res)
-                    $('#player1_name').html(res.current_player);
-                    $('#player1_health').html(res.current_player_health);
+                    var params = { column: $div.attr('data-column'), row: $div.attr('data-row'), element: draggable.attr('id') }
                     
-                    $('#player2_name').html(res.opponent);
-                    $('#player2_health').html(res.opponent_health);
-                    
-                    if(res.current_player_turn){
-                        clearInterval(waitTurn);
-                        $('#complete_turn').removeAttr('disabled');
-                        makeDraggables();
-                    }else{
-                        $('#complete_turn').attr('disabled','disabled');
-                        updateBoard();
-                    }
-
-                    updatePlayersTurn(res.turn);
-
-                }, "json");
-            }
-
-            function updateBoard() {
-                $.get('/game_board/update_board', function(res){
-
-                    for(var row=0; row<res.rows.length; row++){
-                        for(var square=0; square<res.rows[row].length; square++){
-                            var entity = res.rows[row][square].entity;
-                            if(entity.id){
-                                $('[data-row="'+(row+1)+'"][data-column="'+(square+1)+'"]').html('<img class="entity" id="'+entity.id+'" data-row="'+(row+1)+'" data-column="'+(square+1)+'" src="../../static/game_board_app/images/'+entity.image+'.png" data-name="'+entity.name+'" data-type="'+entity.type+'" data-health="'+entity.health+'" alt="'+entity.name+' '+entity.type+'" >');
-                            }else if(row+1==res.rows.length && res.player_number){
-                                $('[data-row="'+(row+1)+'"][data-column="'+(square+1)+'"]').html('<div data-row="'+(row+1)+'" data-column="'+(square+1)+'" class="makeMeDroppable"></div>');
-                            }else if(row+1==1 && res.player_number){
-                                $('[data-row="'+(row+1)+'"][data-column="'+(square+1)+'"]').html('<div data-row="'+(row+1)+'" data-column="'+(square+1)+'" class="makeMeDroppable"></div>');
+                    $.ajaxSetup({
+                        beforeSend: function(xhr, settings) {
+                            if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+                                xhr.setRequestHeader("X-CSRFToken", '{{ csrf_token }}');
                             }
                         }
-                    }
+                    });
                     
-                    findDroppables();
+                    $.ajax( { type: "POST",
+                        url: '/game_board/place_building',
+                        dataType: "json",
+                        data: JSON.stringify(params),
+                        contentType: "application/json; charset=utf-8",
+                        traditional: true,
+                        success: function(result) {
+                            updateBoard();
+                        }
+                    });
+                }
+            });
+        }
 
-                    getPlayerInfo();
-                });
-            }
+        function getPlayerInfo(){
+            $.get('/game_board/get_players_info', function(res){
+                
+                updatePlayer(res);
+
+                $('#complete_turn').removeAttr('disabled');
+
+            }, "json");
+        }
+
+        function updatePlayer(res){
+
+            $('#player1_name').html(res.current_player);
+            $('#player1_health').html(res.current_player_health);
+            
+            $('#player2_name').html(res.opponent);
+            $('#player2_health').html(res.opponent_health);
+            
+            updateBoard();
+        }
+
+        function applyBuildingActions(){
+            $('.building_actions').qtip({
+                 // Grab some elements to apply the tooltip to
+                content: {
+                    text: 'My common piece of text here'
+                }
+            });
+        }
+
+        function updateBoard() {
+            $.get('/game_board/update_board', function(res){
+        
+                var players = res.player;
+
+                updatePlayer(res.player)
+
+                for(var row=0; row<res.rows.length; row++){
+                    for(var square=0; square<res.rows[row].length; square++){
+                        var entity = res.rows[row][square].entity;
+                        if(entity.id){
+                            if(!$('img[data-row="'+(row+1)+'"][data-column="'+(square+1)+'"]').length){
+                                $('[data-row="'+(row+1)+'"][data-column="'+(square+1)+'"]').html('<img class="entity" id="'+entity.id+'" data-row="'+(row+1)+'" data-column="'+(square+1)+'" src="../../static/game_board_app/images/'+entity.image+'.png" data-name="'+entity.name+'" data-type="'+entity.type+'" data-health="'+entity.health+'" alt="'+entity.name+' '+entity.type+'" >');
+
+                                if(entity.type == 'building' && row+1==res.rows.length && players.current_player_number == 2 || row+1==1 && players.current_player_number == 1)
+                                    $('img[data-row="'+(row+1)+'"][data-column="'+(square+1)+'"]').addClass('building_actions');
+                                
+                                applyBuildingActions();
+                            }
+                        }else if(row+1==res.rows.length && players.current_player_number == 2 || row+1==1 && players.current_player_number == 1){
+                            $('[data-row="'+(row+1)+'"][data-column="'+(square+1)+'"]').html('<div data-row="'+(row+1)+'" data-column="'+(square+1)+'" class="makeMeDroppable"></div>');
+                        }else{
+                            $('[data-row="'+(row+1)+'"][data-column="'+(square+1)+'"]').html('');
+                        }
+                    }
+                }
+                
+                findDroppables();
+                getPlayerInfo();
+            });
+        }
+
+        function displayInfo($entity){
+            var entity='<p><strong>'+$entity.attr('data-type')+'</strong></p>';
+            var type='<p><strong>Type:</strong> '+$entity.attr('data-name')+'</p>';
+            var health='<p><strong>Health:</strong> '+$entity.attr('data-health')+'</p>';
+            var info=entity+type+health;
+            $('#info-box').html(info);
+        }
+
+        $(document).ready(function(){
+
+            makeDraggables();
 
             $.get('/game_board/get_squares', function(res){
                 $('#board-area').html(res);
 
                 updateBoard();
-                findDroppables();
-                getPlayerInfo();
             });
 
             $(document).on('click', 'button.navbar-btn', function(){
-                clearInterval(waitTurn);
                 window.location = '/lobby';
             });
 
@@ -139,18 +156,6 @@
             }).on('mouseleave', '.entity', function(){
                 $('#info-box').html('');
             });
-
-            function displayInfo($entity){
-                var entity='<p><strong>'+$entity.attr('data-type')+'</strong></p>';
-                var type='<p><strong>Type:</strong> '+$entity.attr('data-name')+'</p>';
-                var health='<p><strong>Health:</strong> '+$entity.attr('data-health')+'</p>';
-                var info=entity+type+health;
-                $('#info-box').html(info);
-            }
-
-            function updatePlayersTurn(playerName){
-                $('#header h2').text(playerName+"'s Turn");
-            }
 
             $(document).on('click', '#complete_turn', function(){
                 $.get('/game_board/complete_turn', function(res){
@@ -163,19 +168,12 @@
 </head>
 <body>
     <div id="wrapper">
-        <div id="header" class="row">
-            <h2></h2>
-        </div>
+
         <div id="left-column" class="container-fluid">
             <div id="menu" class="row">
                 <button type="button" class="btn btn-info navbar-btn">
                     Lobby
                 </button>
-                <!-- <div>
-                    <a href="/main_menu/">Main Menu</a>
-                    <a href="/concede/">Concede</a>
-                    <a href="/quit/">Quit</a>
-                </div> -->
             </div>
 
             <div class="align-self-end">
