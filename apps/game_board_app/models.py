@@ -153,26 +153,19 @@ class GameManager(models.Manager):
 				errors['resources'] = "Not enough resources to upgrade this building"
 		return {"errors":errors}
 
-	def move_unit(self,game_id,user_id,unit_id):
+	def move_unit(self,game_id,unit_id):
 		game_check = Game.objects.check_game_id(game_id)
 		game = game_check['game']
 		errors = game_check['errors']
-		player = None
 
-		players = Player.objects.filter(game_id=game_id,user_id=user_id)
-		if players.count() == 1:
-			player = players[0]
-		else:
-			errors['player'] = "No player or too many players found"
-
-		entities = Entity.objects.filter(id=unit_id,owner_id=user_id,square__row__game_id=game_id)
+		entities = Entity.objects.filter(id=unit_id,square__row__game_id=game_id)
 		if entities.count() == 1:
 			unit = entities[0]
 		else:
 			errors['entity'] = "No entity or too many entities found"
 
 		if not errors:
-			result = unit.move_unit(player.player_number)
+			result = unit.move_unit()
 
 		return {"errors":errors, "result":result}
 
@@ -204,7 +197,7 @@ class Game(models.Model):
 			units = self.player_units('Unit').order_by('square__row__position')
 
 		for unit in units:
-			unit.move_unit(self.turn)
+			unit.move_unit()
 
 
 	def player_units(self,kind):
@@ -329,10 +322,13 @@ class Entity(models.Model):
 		else:
 			return True
 
-	def move_unit(self,player_number):
+	def move_unit(self):
 		position = self.square.row.position
 		attack_result = None
-		
+		game_id = self.square.row.game_id
+		player = Player.objects.get(user_id=self.owner_id,game_id=game_id)
+		player_number = player.player_number
+
 		if player_number == 1:
 			new_position = position+1
 		else:
