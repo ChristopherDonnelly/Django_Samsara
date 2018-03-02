@@ -292,17 +292,22 @@ class Entity(models.Model):
 		attack_result = None
 
 		if self.element == target_entity.element:
+			print("Player {} ties with target {}".format(self.element.name,target_entity.element.name))
+			print("Health before: {}, damage {}, self-level:{}, target-health:{}".format(self.health,target_entity.level,self.level,target_entity.health))
 			self.health -= target_entity.level
 			target_entity.health -= self.level
 			attack_result = "Tie"
 		elif target_entity.element.name in entity_relationship[self.element.name]:
-			target_entity.health -= (self.level+1)
-			self.health -= 1
 			print("Player ({}) beats target ({})".format(self.element.name,target_entity.element.name))
+			print("Health before: {}, damage {}, self-level:{}, target-health:{}".format(self.health,1,self.level,target_entity.health))
+			target_entity.health -= (self.level+1)
+			self.health -= target_entity.level
 			attack_result = "Win"
 		else:
-			self.health -= (target_entity.level+1)
 			print("Player ({}) loses to target ({})".format(self.element.name,target_entity.element.name))
+			print("Health before: {}, damage {}, self-level:{}, target-health:{}".format(self.health,target_entity.level+1,self.level,target_entity.health))
+			self.health -= (target_entity.level+1)
+			target_entity.health -= self.level
 			attack_result = "Lose"
 
 		self.save()
@@ -376,7 +381,7 @@ class Entity(models.Model):
 
 		new_square = Square.objects.get(row__game_id=game_id,row__position=new_position,position=self.square.position)		
 		if not new_square.entity:
-			unit = Entity.objects.create(kind='Unit',element=self.element,owner=self.owner,level=building_level,health=1)
+			unit = Entity.objects.create(kind='Unit',element=self.element,owner=self.owner,level=building_level,health=building_level)
 			# Set the contents of the new square
 			new_square.entity = unit
 			new_square.save()
@@ -385,6 +390,7 @@ class Entity(models.Model):
 
 	def upgrade_unit(self):
 		self.level += 1
+		self.health += 1
 		self.save()
 		return True
 
