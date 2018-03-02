@@ -26,6 +26,8 @@
         var documentReady = false;
         var waitingRoom = null;
         var opponentJoined = false;
+        var gameOver = false;
+        var gameId;
 
         function csrfSafeMethod(method) {
             // these HTTP methods do not require CSRF protection
@@ -76,11 +78,9 @@
             $.get('/game_board/get_players_info', function(res){
                 
                 updatePlayer(res);
-                
                 gameLoop(res);
-                // console.log(res.opponent!="Waiting")
-                // $('#complete_turn').removeAttr('disabled');
-                
+                gameId = res.game_id;
+
                 if(res.opponent!="Waiting") opponentJoined=true;
                 else opponentJoined=false;
 
@@ -96,8 +96,7 @@
             $('#player2_name').html(res.opponent);
             $('#player2_health').html(res.opponent_health);
             $('#player2_resources').html(res.opponent_resources);
-            
-            // updateBoard();
+
         }
 
         function applyBuildingActions(){
@@ -147,8 +146,6 @@
             $('.entity:not(.building_actions)').qtip({
                 content: {
                     text: function(event, api) {
-                        // Retrieve content from custom attribute of the $('.selector') elements.
-                        //alert($(this).parent().find('.info').html())
                         return $(this).parent().find('.info').clone();
                     },
                     prerender: true,
@@ -184,9 +181,37 @@
                     $('.unit').each(function(i){
                         console.log($(this).attr('id'))
                         //move_unit();
-                        $.get('/game_board/move_unit/'+$(this).attr('id'), function(res){
-                            updateBoard();
-                        });
+                        if(!gameOver){
+                            $.get('/game_board/move_unit/'+$(this).attr('id'), function(res){
+                                console.log(res)
+                                if(res.success){
+                                    updateBoard();
+                                }else{
+                                    console.log(res.errors)
+                                    if(!gameOver){
+                                        gameOver = true;
+
+                                        $("#game_over p").html('<p>'+res.errors.game_over+'</p><p>Player '+res.winner+' is the winner!</p>');
+
+                                        $("#game_over").dialog({
+                                            modal: true,
+                                            classes: {
+                                                "ui-dialog": "ui-corner-all"
+                                            },
+                                            buttons: [{
+                                                text: "Return to Lobby",
+                                                click: function() {
+                                                    console.log('Player = '+$(this).attr('data-player'))
+                                                    $.get('/delete_game/'+gameId, function(){
+                                                        window.location = '/lobby'; 
+                                                    });                                 
+                                                }
+                                            }]
+                                        });
+                                    }
+                                }
+                            });
+                        }
                     });
                 }else{
                     updateBoard();
@@ -262,9 +287,8 @@
         }
 
         function playerWaitingRoom(){
-            console.log(opponentJoined)
             if(!opponentJoined){
-                getPlayerInfo()
+                getPlayerInfo();
                 if(!documentReady){
                     documentReady=true;
                     // Load initial game board on entry
@@ -275,45 +299,39 @@
                         
                         updateBoard();
 
-                        $( "#dialog" ).dialog({
+                        $("#waiting_room").dialog({
                             modal: true,
                             classes: {
                                 "ui-dialog": "ui-corner-all"
                             },
-                            buttons: [
-                                {
+                            buttons: [{
                                 text: "Return to Lobby",
-                                icon: "ui-icon-heart",
                                 click: function() {
                                     clearInterval(waitingRoom);
                                     window.location = '/lobby';                                    
                                 }
-                            
-                                // Uncommenting the following line would hide the text,
-                                // resulting in the label being used as a tooltip
-                                //showText: false
-                                }
-                            ]
+                            }]
                         });
                     });
                 }
             }else{
                 clearInterval(waitingRoom);
-                $( "#dialog" ).dialog( "close" );
+                $( "#waiting_room" ).dialog( "close" );
                 initializeGame();
             }
         }
 
         $(document).ready(function(){
-
             waitingRoom = setInterval(playerWaitingRoom, 500);
-            
         });
     </script>
 </head>
 <body>
-    <div id="dialog" title="Waiting on Opponent">
+    <div id="waiting_room" title="Waiting on Opponent">
         <p>Waiting for Opponent to join!</p>
+    </div>
+    <div id="game_over" title="Game Over">
+        <p>Game Over!</p>
     </div>
     <div id="wrapper">
 

@@ -17,7 +17,8 @@ def get_players_info(request):
 	response['opponent_health'] = 0
 	response['opponent_resources'] = 0
 	response['opponent_turn'] = False
-
+	response['game_id'] = request.session['game_id']
+	
 	for player in players:
 		user = User.objects.get(id=player.user_id)
 		if user.id == request.session['user_session']:
