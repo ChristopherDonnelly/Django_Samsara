@@ -247,7 +247,7 @@ def upgrade_unit(request,building_id):
 	return JsonResponse({'success':success, "errors":validate['errors']})
 
 def move_unit(request,unit_id):
-	validate = Game.objects.move_unit(request.session['game_id'],request.session['user_session'],unit_id)
+	validate = Game.objects.move_unit(request.session['game_id'],unit_id)
 
 	if validate['errors']:
 		for tag, error in validate['errors'].items():
