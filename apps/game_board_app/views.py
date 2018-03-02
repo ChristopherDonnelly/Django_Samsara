@@ -245,3 +245,17 @@ def upgrade_unit(request,building_id):
 	print("Upgrade ", validate['errors'])
 	# Add return value that indicates success or failure, depending on resources
 	return JsonResponse({'success':success, "errors":validate['errors']})
+
+def move_unit(request,unit_id):
+	validate = Game.objects.move_unit(request.session['game_id'],request.session['user_session'],unit_id)
+
+	if validate['errors']:
+		for tag, error in validate['errors'].items():
+			messages.error(request, error, extra_tags=tag)
+		success = False
+	else:
+		success = True
+
+	print("Move ", validate['errors'])
+	# Add return value that indicates success or failure, depending on resources
+	return JsonResponse({'success':success, "errors":validate['errors'], "result":validate['result']})

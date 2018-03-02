@@ -153,6 +153,29 @@ class GameManager(models.Manager):
 				errors['resources'] = "Not enough resources to upgrade this building"
 		return {"errors":errors}
 
+	def move_unit(self,game_id,user_id,unit_id):
+		game_check = Game.objects.check_game_id(game_id)
+		game = game_check['game']
+		errors = game_check['errors']
+		player = None
+
+		players = Player.objects.filter(game_id=game_id,user_id=user_id)
+		if players.count() == 1:
+			player = players[0]
+		else:
+			errors['player'] = "No player or too many players found"
+
+		entities = Entity.objects.filter(id=unit_id,owner_id=user_id,square__row__game_id=game_id)
+		if entities.count() == 1:
+			unit = entities[0]
+		else:
+			errors['entity'] = "No entity or too many entities found"
+
+		if not errors:
+			result = unit.move_unit(player.player_number)
+
+		return {"errors":errors, "result":result}
+
 class Game(models.Model):
 	level = models.PositiveSmallIntegerField()
 	turn = models.PositiveSmallIntegerField() # Keeps track of whose turn it is
@@ -266,21 +289,26 @@ class Entity(models.Model):
 								"water": ["metal","fire"],
 								"metal": ["wood","earth"]
 								}
+		attack_result = None
 
 		if self.element == target_entity.element:
 			self.health -= target_entity.level
 			target_entity.health -= self.level
+			attack_result = "Tie"
 		elif target_entity.element.name in entity_relationship[self.element.name]:
 			target_entity.health -= (self.level+1)
 			self.health -= 1
 			print("Player ({}) beats target ({})".format(self.element.name,target_entity.element.name))
+			attack_result = "Win"
 		else:
 			self.health -= (target_entity.level+1)
 			print("Player ({}) loses to target ({})".format(self.element.name,target_entity.element.name))
+			attack_result = "Lose"
 
 		self.save()
 		target_entity.save()
 		target_entity.check_unit()
+		return attack_result
 
 	objects = EntityManager()
 
@@ -298,6 +326,7 @@ class Entity(models.Model):
 
 	def move_unit(self,player_number):
 		position = self.square.row.position
+		attack_result = None
 		
 		if player_number == 1:
 			new_position = position+1
@@ -318,7 +347,7 @@ class Entity(models.Model):
 		elif new_squares[0].entity:
 			# If this player doesn't own the unit, attack it
 			if self.owner != new_squares[0].entity.owner:
-				self.attack(new_squares[0].entity)
+				attack_result = self.attack(new_squares[0].entity)
 
 		# If we survived any attacks, move the unit forward
 		if self.check_unit() and new_squares.count() == 1 and not new_squares[0].entity:
@@ -332,6 +361,8 @@ class Entity(models.Model):
 			# Set the contents of the new square
 			new_square.entity = self
 			new_square.save()
+
+		return attack_result
 
 	def produce_unit(self,building_level):
 		unit = None
