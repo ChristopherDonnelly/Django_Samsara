@@ -1,79 +1,108 @@
 <!DOCTYPE html>
 <html>
     <head>
-		<title></title>
-    {% load static %}
+		<title>Samsara Lobby</title>
+		{% load static %}
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	
+		<link rel="stylesheet" text="text/css" href="{% static 'lobby_app/css/lobby_style.css' %}">
+
+		<!-- <script>
+			$(document).ready(function(){
+
+				$.get('/game_board/get_players_info', function(res){
+					console.log(res)
+					$()
+
+				}, "json");
+
+			});
+		</script> -->
    </head>
     <body>
 	    <div id="wrapper">
 	    	<div id="mainbox">
-				<!-- games user hosted -->
-				<table>
-					<thead>
-						<th>Game</th>
-						<th>No. Players in Game</th>
-						<th>Actions<th>
-						<th>Who's Playing</th>
-						<th>Whose Turn</th>
-					</thead>
-					<tbody>
-						{% if curr_players_game %}
-							{% for game in curr_players_game %}
-								<tr>
-									<td>{{ game.id }}</td>
-									<td>{{ game.players.count }}</td>
-									<td><a href="/game_board/draw_board/{{game.id}}">Continue Game</a> 
-										{% if game.players.all.0.user_id == request.session.user_session %}
-											, <a href="delete_game/{{game.id}}">Delete Game, </a>
-										{% endif %}
-									</td>
-									<td>{{ game.players.first.user.name }} 
-										{% if game.players.count > 1 %} 
-											, {{ game.players.last.user.name }}
-										{% endif %}
-									</td>
-						
-								</tr>
-							{% endfor %}
-						{% endif %}
-					</tbody>
-				</table>
-				<!-- games other players hosted -->
-				<table>
-					<thead>
-						<th>Game</th>
-						<th>No. Players in Game</th>
-						<th>Actions</th>
-						<th>Who's Playing</th>
-						<th>Whose Turn</th>
-					</thead>
-					<tbody>
-						{% if others_games %}
-							{% for game in others_games %}
-								<tr>
-									<td>{{ game.id }}</td>
-									<td>{{ game.players.count }}</td>
-									<td>
-										{% if game.players.count < 2 %}
-											<a href="join_game/{{game.id}}">Join Game</a>, 
-										{% endif %} <a href="/game_board/draw_board/{{game.id}}">View game</a>
-									</td>
-									<td>{{ game.players.first.user.name }} 
-										{% if game.players.count > 1 %} 
-											, {{ game.players.last.user.name }}
-										{% endif %}
-									</td>
-								</tr>
-							{% endfor %}
-						{% endif %}
-					</tbody>
-				</table>
+				<form action="/game_board/populate_board" method="post">
+					{% csrf_token %} 
+					<input type="submit" name="submit" value="New Game" id="newgame">
+				</form>
+				<form action="/logout/" method="post">
+					{% csrf_token %} 
+					<input type="submit" name="submit" value="Logout" id="logout">
+				</form>
+				<form action="/lobby/" method="post">
+					{% csrf_token %}
+					<input type="submit" name="submit" value="Reload" id="reload">
+				</form>
+				<!-- currently logged in user's games -->
+				<div class="your_games">
+					<h2>Your Games</h2>
+					<table>
+						<thead>
+							<th class="col-odd">Game</th>
+							<th># of Players</th>
+							<th class="col-odd">Actions</th>
+							<th>Players</th>
+						</thead>
+						<tbody>
+							{% if curr_players_game %}
+								{% for game in curr_players_game %}
+									<tr>
+										<td class="col-odd"><a href="/lobby/show_game_info/{{ game.id }}">{{ game.id }}</a></td>
+										<td>{{ game.players.count }}</td>
+										<td class="col-odd"><a href="/game_board/draw_board/{{ game.id }}">Continue Game</a> 
+											{% if game.players.all.0.user_id == request.session.user_session %}<br> 
+												<a href="delete_game/{{ game.id }}">Delete Game</a>
+											{% endif %}
+										</td>
+										<td>{{ game.players.first.user.username }} 
+											{% if game.players.count > 1 %} 
+												, {{ game.players.last.user.username }}
+											{% endif %}
+										</td>
+									</tr>
+								{% endfor %}
+							{% endif %}
+						</tbody>
+					</table>
+				</div>
+				<!-- other players' games -->
+				<div class="other_games">
+					<h2>Other Games</h2>
+					<table>
+						<thead>
+							<th class="col-odd">Game</th>
+							<th># of Players</th>
+							<th class="col-odd">Actions</th>
+							<th>Players</th>
+						</thead>
+						<tbody>
+							{% if others_games %}
+								{% for game in others_games %}
+									<tr>
+										<td class="col-odd"><a href="/lobby/show_game_info/{{ game.id }}">{{ game.id }}</a></td>
+										<td>{{ game.players.count }}</td>
+										<td class="col-odd">
+											{% if game.players.count < 2 %}
+												<a href="join_game/{{ game.id }}">Join Game</a>
+											{% else%}
+												<a href="/game_board/draw_board/{{ game.id }}">View game</a>
+											{% endif %} 
+										</td>
+										<td>{{ game.players.first.user.username }} 
+											{% if game.players.count > 1 %} 
+												, {{ game.players.last.user.username }}
+											{% endif %}
+										</td>
+									</tr>
+								{% endfor %}
+							{% endif %}
+						</tbody>
+					</table>
+				</div>
 			</div>
 
-	  		<form action="/game_board/populate_board" method="post">
-				{% csrf_token %} 
-				<input type="submit" name="submit" value="New Game">
-	  		</form>
 	  	</div>
 	</body>
 </html>
