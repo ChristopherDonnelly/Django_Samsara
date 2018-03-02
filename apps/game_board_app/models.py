@@ -113,7 +113,7 @@ class GameManager(models.Manager):
 			errors['entity'] = "No entity or too many entities found"
 
 		if not errors:
-			if player.resources > building.level:
+			if player.resources >= building.level:
 				produced = building.produce_unit(building.level)
 				if produced:
 					player.resources -= building.level
@@ -144,7 +144,7 @@ class GameManager(models.Manager):
 			errors['entity'] = "No entity or too many entities found"
 
 		if not errors:
-			if player.resources > building.level:
+			if player.resources >= 1:
 				upgraded = building.upgrade_unit()
 				if upgraded:
 					player.resources -= 1
