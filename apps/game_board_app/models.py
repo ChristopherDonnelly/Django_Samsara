@@ -356,9 +356,12 @@ class Entity(models.Model):
 		if not new_squares:
 			# If we're in the enemy's base row, we can do damage (though this unit will die)
 			if self.square.inEnemyBaseRow(player_number):
+				self.square.row.game.attackEnemy(player_number,self.level)
 				self.health = 0
 				self.save()
-				self.square.row.game.attackEnemy(player_number,self.level)
+				prev_square = self.square
+				prev_square.entity = None
+				prev_square.save()
 		# If the square we're trying to move into isn't empty
 		elif new_squares[0].entity:
 			# If this player doesn't own the unit, attack it
