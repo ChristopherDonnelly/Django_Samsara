@@ -18,8 +18,8 @@ class GameManager(models.Manager):
 			errors['user'] = "No user or too many users found"
 
 		if not errors:
-			game = Game.objects.create(level=level)
-			player = Player.objects.create(game=game,user=User.objects.get(id=user_id),player_number=1)
+			game = Game.objects.create(level=level,turn=1)
+			player = Player.objects.create(game=game,user=User.objects.get(id=user_id),player_number=1,health=10,resources=50)
 			# Player1 is host of new game
 			game.host.add(player)
 			game.save()
@@ -57,7 +57,7 @@ class GameManager(models.Manager):
 				errors['user'] = "No user or too many users found"
 
 			if not errors:
-				player = Player.objects.create(game=game,user=User.objects.get(id=user_id),player_number=2)
+				player = Player.objects.create(game=game,user=User.objects.get(id=user_id),player_number=2,health=10,resources=50)
 
 		return {"errors": errors}
 
@@ -118,13 +118,67 @@ class GameManager(models.Manager):
 				if produced:
 					player.resources -= building.level
 					player.save()
+				else: 
+					errors['board'] = "Could not add unit to the board"
 			else:
 				errors['resources'] = "Not enough resources to produce from this building"
 		return {"errors":errors}
 
+	def upgrade_unit(self,game_id,user_id,building_id):
+		game_check = Game.objects.check_game_id(game_id)
+		game = game_check['game']
+		errors = game_check['errors']
+		player = None
+
+		players = Player.objects.filter(game_id=game_id,user_id=user_id)
+		if players.count() == 1:
+			player = players[0]
+		else:
+			errors['player'] = "No player or too many players found"
+
+		entities = Entity.objects.filter(id=building_id,owner_id=user_id,square__row__game_id=game_id)
+		print("Building {}, Owner {}, game id {}".format(building_id,user_id,game_id))
+		if entities.count() == 1:
+			building = entities[0]
+		else:
+			errors['entity'] = "No entity or too many entities found"
+
+		if not errors:
+			if player.resources > building.level:
+				upgraded = building.upgrade_unit()
+				if upgraded:
+					player.resources -= 1
+					player.save()
+			else:
+				errors['resources'] = "Not enough resources to upgrade this building"
+		return {"errors":errors}
+
+	def move_unit(self,game_id,user_id,unit_id):
+		game_check = Game.objects.check_game_id(game_id)
+		game = game_check['game']
+		errors = game_check['errors']
+		player = None
+
+		players = Player.objects.filter(game_id=game_id,user_id=user_id)
+		if players.count() == 1:
+			player = players[0]
+		else:
+			errors['player'] = "No player or too many players found"
+
+		entities = Entity.objects.filter(id=unit_id,owner_id=user_id,square__row__game_id=game_id)
+		if entities.count() == 1:
+			unit = entities[0]
+		else:
+			errors['entity'] = "No entity or too many entities found"
+
+		if not errors:
+			result = unit.move_unit(player.player_number)
+
+		return {"errors":errors, "result":result}
+
 class Game(models.Model):
 	level = models.PositiveSmallIntegerField()
-	turn = models.PositiveSmallIntegerField(default=1) # Keeps track of whose turn it is
+	turn = models.PositiveSmallIntegerField() # Keeps track of whose turn it is
 	created_at = models.DateTimeField(auto_now_add = True)
 	updated_at = models.DateTimeField(auto_now = True)
 
@@ -174,8 +228,8 @@ class Player(models.Model):
 	hosted_games = models.ForeignKey(Game, related_name="host", null=True, on_delete=models.SET_NULL)
 	user = models.ForeignKey(User,on_delete=models.PROTECT)
 	player_number = models.PositiveSmallIntegerField()
-	health = models.IntegerField(default=10)
-	resources = models.IntegerField(default=50)
+	health = models.IntegerField()
+	resources = models.IntegerField()
 	created_at = models.DateTimeField(auto_now_add = True)
 	updated_at = models.DateTimeField(auto_now = True)
 
@@ -220,10 +274,10 @@ class EntityManager(models.Manager):
 
 # insert into game_board_app_entity (element_id,level,owner_id,created_at,updated_at,kind) values (1,1,1,'2/24/2018','2/24/2018','Building')
 class Entity(models.Model):
-	kind = models.CharField(max_length=50,default="Building")
+	kind = models.CharField(max_length=50)
 	element = models.ForeignKey(Element, related_name="entity",on_delete=models.PROTECT)
-	level = models.PositiveSmallIntegerField(default=1)
-	health = models.PositiveSmallIntegerField(default=1)
+	level = models.PositiveSmallIntegerField()
+	health = models.PositiveSmallIntegerField()
 	owner = models.ForeignKey(User, related_name="entity",on_delete=models.PROTECT)
 	created_at = models.DateTimeField(auto_now_add = True)
 	updated_at = models.DateTimeField(auto_now = True)
@@ -235,25 +289,36 @@ class Entity(models.Model):
 								"water": ["metal","fire"],
 								"metal": ["wood","earth"]
 								}
+		attack_result = None
 
 		if self.element == target_entity.element:
-			self.health -= 1
-			target_entity.health -= 1
+			print("Player {} ties with target {}".format(self.element.name,target_entity.element.name))
+			print("Health before: {}, damage {}, self-level:{}, target-health:{}".format(self.health,target_entity.level,self.level,target_entity.health))
+			self.health -= target_entity.level
+			target_entity.health -= self.level
+			attack_result = "Tie"
 		elif target_entity.element.name in entity_relationship[self.element.name]:
-			target_entity.health -= 1
 			print("Player ({}) beats target ({})".format(self.element.name,target_entity.element.name))
+			print("Health before: {}, damage {}, self-level:{}, target-health:{}".format(self.health,1,self.level,target_entity.health))
+			target_entity.health -= (self.level+1)
+			self.health -= target_entity.level
+			attack_result = "Win"
 		else:
-			self.health -= 1
 			print("Player ({}) loses to target ({})".format(self.element.name,target_entity.element.name))
+			print("Health before: {}, damage {}, self-level:{}, target-health:{}".format(self.health,target_entity.level+1,self.level,target_entity.health))
+			self.health -= (target_entity.level+1)
+			target_entity.health -= self.level
+			attack_result = "Lose"
 
 		self.save()
 		target_entity.save()
 		target_entity.check_unit()
+		return attack_result
 
 	objects = EntityManager()
 
 	def check_unit(self):
-		if self.health == 0:
+		if self.health <= 0:
 			# Unit has died; remove it from the board
 			print("Removing unit {}, element:{}, owner:{}".format(self, self.element.name, self.owner.name))
 			square = self.square
@@ -266,6 +331,7 @@ class Entity(models.Model):
 
 	def move_unit(self,player_number):
 		position = self.square.row.position
+		attack_result = None
 		
 		if player_number == 1:
 			new_position = position+1
@@ -286,7 +352,7 @@ class Entity(models.Model):
 		elif new_squares[0].entity:
 			# If this player doesn't own the unit, attack it
 			if self.owner != new_squares[0].entity.owner:
-				self.attack(new_squares[0].entity)
+				attack_result = self.attack(new_squares[0].entity)
 
 		# If we survived any attacks, move the unit forward
 		if self.check_unit() and new_squares.count() == 1 and not new_squares[0].entity:
@@ -301,6 +367,8 @@ class Entity(models.Model):
 			new_square.entity = self
 			new_square.save()
 
+		return attack_result
+
 	def produce_unit(self,building_level):
 		unit = None
 		position = self.square.row.position
@@ -313,12 +381,18 @@ class Entity(models.Model):
 
 		new_square = Square.objects.get(row__game_id=game_id,row__position=new_position,position=self.square.position)		
 		if not new_square.entity:
-			unit = Entity.objects.create(kind='Unit',element=self.element,owner=self.owner,level=building_level)
+			unit = Entity.objects.create(kind='Unit',element=self.element,owner=self.owner,level=building_level,health=building_level)
 			# Set the contents of the new square
 			new_square.entity = unit
 			new_square.save()
 
 		return unit
+
+	def upgrade_unit(self):
+		self.level += 1
+		self.health += 1
+		self.save()
+		return True
 
 class Row(models.Model):
 	position = models.PositiveSmallIntegerField() # Positions 1-5

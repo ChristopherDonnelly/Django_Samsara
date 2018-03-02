@@ -11,5 +11,7 @@ urlpatterns = [
    	url(r'^place_building', views.place_building),
    	url(r'^attack', views.attack),
    	url(r'^complete_turn', views.complete_turn),
-   	url(r'^produce_unit/(\d+)$',views.produce_unit)
+   	url(r'^produce_unit/(\d+)$',views.produce_unit),
+   	url(r'^upgrade_unit/(\d+)$',views.upgrade_unit),
+   	url(r'^move_unit/(\d+)$',views.move_unit),
 ] 

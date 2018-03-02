@@ -221,10 +221,13 @@ def place_building(request):
 	if building['errors']:
 		for tag, error in building['errors'].items():
 			messages.error(request, error, extra_tags=tag)
+		success = False
+	else:
+		success = True
 	
 	print(building['errors'])
 
-	return JsonResponse({"success":True})
+	return JsonResponse({'success':success, "errors":building['errors']})
 
 def attack(request,unit_id,target_id):
 	Unit.attack(unit_id,target_id)
@@ -239,8 +242,43 @@ def complete_turn(request):
 	return HttpResponse("Completed turn")
 
 def produce_unit(request,building_id):
-	produce_validate = Game.objects.produce_unit(request.session['game_id'],request.session['user_session'],building_id)
-	print("Produce ", produce_validate['errors'])
-	# Add return value that indicates success or failure, depending on resources
-	return JsonResponse({"success":True})
+	validate = Game.objects.produce_unit(request.session['game_id'],request.session['user_session'],building_id)
 
+	if validate['errors']:
+		for tag, error in validate['errors'].items():
+			messages.error(request, error, extra_tags=tag)
+		success = False
+	else:
+		success = True
+
+	print("Produce ", validate['errors'])
+	# Add return value that indicates success or failure, depending on resources
+	return JsonResponse({'success':success, "errors":validate['errors']})
+
+def upgrade_unit(request,building_id):
+	validate = Game.objects.upgrade_unit(request.session['game_id'],request.session['user_session'],building_id)
+
+	if validate['errors']:
+		for tag, error in validate['errors'].items():
+			messages.error(request, error, extra_tags=tag)
+		success = False
+	else:
+		success = True
+
+	print("Upgrade ", validate['errors'])
+	# Add return value that indicates success or failure, depending on resources
+	return JsonResponse({'success':success, "errors":validate['errors']})
+
+def move_unit(request,unit_id):
+	validate = Game.objects.move_unit(request.session['game_id'],request.session['user_session'],unit_id)
+
+	if validate['errors']:
+		for tag, error in validate['errors'].items():
+			messages.error(request, error, extra_tags=tag)
+		success = False
+	else:
+		success = True
+
+	print("Move ", validate['errors'])
+	# Add return value that indicates success or failure, depending on resources
+	return JsonResponse({'success':success, "errors":validate['errors'], "result":validate['result']})
