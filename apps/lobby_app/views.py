@@ -19,7 +19,6 @@ def index(request):
 	# iterate through all of the current_players games
 	for player in current_players:
 		others_games = others_games.exclude(id=player.game_id)
-		print player.game_id
 		
 	# hosted_games = Game.objects.filter(host__in=current_players)
 	# others_games = Game.objects.exclude(host__in=current_players) 
@@ -45,7 +44,6 @@ def show_game_info(request, game_id):
 	others_games = copy.deepcopy(all_games)
 	for player in current_players:
 		others_games = others_games.exclude(id=player.game_id)
-		print player.game_id
 
 	context = {
 		"all_games": all_games,
