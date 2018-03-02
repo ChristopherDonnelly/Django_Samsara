@@ -75,11 +75,12 @@ class GameManager(models.Manager):
 				game.turn = 1
 			game.save()
 
-		return {"errors": game_check['errors']}
+		return {"errors": game_check['errors'], "winner":game_check['winner']}
 
 	def check_game_id(self,game_id):
 		errors = {}
 		game = None
+		winner = None
 
 		games = Game.objects.filter(id=game_id)
 		if games.count() == 1:
@@ -90,8 +91,10 @@ class GameManager(models.Manager):
 
 		if game and game.isOver():
 			errors['game_over'] = "This game is over."
+			players = Player.objects.filter(game=game).order_by('-health')[:1]
+			winner = players[0].user.username
 
-		return {"errors":errors, "game":game}
+		return {"errors":errors, "game":game, "winner":winner}
 
 	def produce_unit(self,game_id,user_id,building_id):
 		game_check = Game.objects.check_game_id(game_id)
@@ -122,7 +125,7 @@ class GameManager(models.Manager):
 					errors['board'] = "Could not add unit to the board"
 			else:
 				errors['resources'] = "Not enough resources to produce from this building"
-		return {"errors":errors}
+		return {"errors":errors, "winner":game_check['winner']}
 
 	def upgrade_unit(self,game_id,user_id,building_id):
 		game_check = Game.objects.check_game_id(game_id)
@@ -151,7 +154,7 @@ class GameManager(models.Manager):
 					player.save()
 			else:
 				errors['resources'] = "Not enough resources to upgrade this building"
-		return {"errors":errors}
+		return {"errors":errors, "winner":game_check['winner']}
 
 	def move_unit(self,game_id,unit_id):
 		game_check = Game.objects.check_game_id(game_id)
@@ -168,7 +171,7 @@ class GameManager(models.Manager):
 		if not errors:
 			result = unit.move_unit()
 
-		return {"errors":errors, "result":result}
+		return {"errors":errors, "result":result, "winner":game_check['winner']}
 
 class Game(models.Model):
 	level = models.PositiveSmallIntegerField()
@@ -209,11 +212,12 @@ class Game(models.Model):
 		else:
 			return Entity.objects.filter(owner_id=None)
 
-	def attackEnemy(self):
+	def attackEnemy(self,player_number,damage):
 		# Get the other player's object (the player whose turn it isn't)
-		enemies = Player.objects.filter(game_id=self.id).exclude(player_number=self.turn)
+		enemies = Player.objects.filter(game_id=self.id).exclude(player_number=player_number)
 		if enemies.count() == 1:
-			enemies[0].attack()
+			print("damage",damage)
+			enemies[0].attack(damage)
 		else:
 			print("No enemy player found")
 
@@ -227,8 +231,9 @@ class Player(models.Model):
 	created_at = models.DateTimeField(auto_now_add = True)
 	updated_at = models.DateTimeField(auto_now = True)
 
-	def attack(self):
-		self.health -= 1
+	def attack(self,damage):
+		print("damage",damage)
+		self.health -= damage
 		self.save()
 
 # insert into game_board_app_element (name,color,created_at,updated_at) values ('fire','red','2/24/2018','2/24/2018')
@@ -291,22 +296,31 @@ class Entity(models.Model):
 			self.health -= target_entity.level
 			target_entity.health -= self.level
 			attack_result = "Tie"
+			target_entity.save()
+			self.save()
+			target_entity.check_unit()
+			self.check_unit()
 		elif target_entity.element.name in entity_relationship[self.element.name]:
 			print("Player ({}) beats target ({})".format(self.element.name,target_entity.element.name))
 			print("Health before: {}, damage {}, self-level:{}, target-health:{}".format(self.health,1,self.level,target_entity.health))
 			target_entity.health -= (self.level+1)
 			self.health -= target_entity.level
 			attack_result = "Win"
+			target_entity.save()
+			self.save()
+			target_entity.check_unit()
+			self.check_unit()
 		else:
 			print("Player ({}) loses to target ({})".format(self.element.name,target_entity.element.name))
 			print("Health before: {}, damage {}, self-level:{}, target-health:{}".format(self.health,target_entity.level+1,self.level,target_entity.health))
 			self.health -= (target_entity.level+1)
 			target_entity.health -= self.level
 			attack_result = "Lose"
+			target_entity.save()
+			self.save()
+			target_entity.check_unit()
+			self.check_unit()
 
-		self.save()
-		target_entity.save()
-		target_entity.check_unit()
 		return attack_result
 
 	objects = EntityManager()
@@ -342,17 +356,21 @@ class Entity(models.Model):
 		if not new_squares:
 			# If we're in the enemy's base row, we can do damage (though this unit will die)
 			if self.square.inEnemyBaseRow(player_number):
+				self.square.row.game.attackEnemy(player_number,self.level)
 				self.health = 0
 				self.save()
-				self.square.row.game.attackEnemy()
+				prev_square = self.square
+				prev_square.entity = None
+				prev_square.save()
 		# If the square we're trying to move into isn't empty
 		elif new_squares[0].entity:
 			# If this player doesn't own the unit, attack it
 			if self.owner != new_squares[0].entity.owner:
+				print("{} attacking {} owned by {}".format(self, new_squares[0].entity, new_squares[0].entity.owner))
 				attack_result = self.attack(new_squares[0].entity)
 
 		# If we survived any attacks, move the unit forward
-		if self.check_unit() and new_squares.count() == 1 and not new_squares[0].entity:
+		if self and new_squares.count() == 1 and not new_squares[0].entity:
 			new_square = new_squares[0]
 
 			# Clear out the unit's current square
@@ -378,7 +396,7 @@ class Entity(models.Model):
 
 		new_square = Square.objects.get(row__game_id=game_id,row__position=new_position,position=self.square.position)		
 		if not new_square.entity:
-			unit = Entity.objects.create(kind='Unit',element=self.element,owner=self.owner,level=building_level,health=building_level)
+			unit = Entity.objects.create(kind='Unit',element=self.element,owner=self.owner,level=building_level,health=building_level+1)
 			# Set the contents of the new square
 			new_square.entity = unit
 			new_square.save()
